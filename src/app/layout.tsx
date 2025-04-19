@@ -2,8 +2,19 @@ import "~/styles/globals.css";
 
 import { type Metadata } from "next";
 import { Geist } from "next/font/google";
+import { Toaster } from "sonner";
 
-import { TRPCReactProvider } from "~/trpc/react";
+import Provider from "./provider";
+import {
+  SidebarHeader,
+  SidebarGroup,
+  SidebarContent,
+  SidebarFooter,
+  Sidebar,
+  SidebarProvider,
+  SidebarTrigger,
+} from "./_components/ui/sidebar";
+import { AppSidebar } from "./_components/appSidebar";
 
 export const metadata: Metadata = {
   title: "Create T3 App",
@@ -16,13 +27,29 @@ const geist = Geist({
   variable: "--font-geist-sans",
 });
 
-export default function RootLayout({
-  children,
-}: Readonly<{ children: React.ReactNode }>) {
+export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className={`${geist.variable}`}>
+    <html lang="en" className={`${geist.variable} tracking-wide leading-loose`} suppressHydrationWarning>
       <body>
-        <TRPCReactProvider>{children}</TRPCReactProvider>
+        <Provider>
+          <SidebarProvider defaultOpen={false}>
+            <AppSidebar
+              chats={[
+                ...Array.from({ length: 30 }, (_, i) => ({
+                  name: `My Chat Is Pretty Veryyyyy Long ${i + 1}`,
+                  id: `chat-${i + 1}`,
+                })),
+              ]}
+            />
+
+            <main className="w-full h-screen">
+              <SidebarTrigger />
+
+              {children}
+            </main>
+          </SidebarProvider>
+        </Provider>
+        <Toaster />
       </body>
     </html>
   );

@@ -1,44 +1,31 @@
-import { NextResponse } from "next/server";
-import { chat, Message } from "../../../server/openrouter";
+import openai from "~/server/openai/init";
+import { streamText, type ChatRequest } from "ai";
 
-export async function POST(request: Request) {
+export const maxDuration = 60;
+
+export async function POST(req: Request) {
   try {
-    const { messages, modelId } = await request.json();
+    const { messages } = (await req.json()) as ChatRequest;
 
-    if (!Array.isArray(messages) || messages.length === 0 || !modelId) {
-      return NextResponse.json(
-        { error: "Invalid request. Messages array and modelId are required." },
-        { status: 400 },
-      );
-    }
+    const result = streamText({
+      model: openai("openai/gpt-4o-mini"),
+      system: "You are a helpful assistant.",
+      messages,
+    });
 
-    // Validate message format
-    const validMessages = messages.every(
-      (msg) =>
-        msg &&
-        typeof msg === "object" &&
-        ["user", "assistant", "system"].includes(msg.role) &&
-        typeof msg.content === "string",
-    );
-
-    if (!validMessages) {
-      return NextResponse.json(
-        {
-          error:
-            "Invalid message format. Each message must have a role and content.",
-        },
-        { status: 400 },
-      );
-    }
-
-    const response = await chat(messages as Message[], modelId);
-
-    return NextResponse.json(response);
+    return result.toDataStreamResponse({
+      sendSources: true,
+      sendReasoning: true,
+      getErrorMessage: (error) => {
+        return "An unknown error occurred. Please try again later.";
+      },
+    });
   } catch (error) {
-    console.error("Error in chat API route:", error);
-    return NextResponse.json(
-      { error: "Failed to process chat request." },
-      { status: 500 },
-    );
+    console.error("Chat API error:", error);
+
+    return new Response(JSON.stringify({ error: "Failed to generate response" }), {
+      status: 500,
+      headers: { "Content-Type": "application/json" },
+    });
   }
 }
