@@ -1,4 +1,6 @@
 import { type Message } from "ai";
+import { ScrollArea } from "./ui/scroll-area";
+import CustomMarkdown from "./customMarkdown";
 
 interface FullChatProps {
   messages: Message[];
@@ -7,29 +9,32 @@ interface FullChatProps {
 
 export default function FullChat({ messages, isLoading }: FullChatProps) {
   return (
-    <div className="w-full max-w-4xl space-y-4 my-4">
-      {messages.map((message) => (
-        <div key={message.id} className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}>
-          <div
-            className={`max-w-3xl rounded-lg px-4 py-2 ${
-              message.role === "user" ? "bg-blue-600 text-white" : "bg-neutral-800 text-white"
-            }`}
-          >
-            {message.content}
-          </div>
-        </div>
-      ))}
-      {isLoading && (
-        <div className="flex justify-start">
-          <div className="max-w-3xl rounded-lg px-4 py-2 bg-neutral-800 text-white">
-            <div className="flex space-x-2">
-              <div className="h-2 w-2 rounded-full bg-gray-500 animate-pulse"></div>
-              <div className="h-2 w-2 rounded-full bg-gray-500 animate-pulse delay-75"></div>
-              <div className="h-2 w-2 rounded-full bg-gray-500 animate-pulse delay-150"></div>
-            </div>
-          </div>
+    <ScrollArea className="w-full h-10/12 max-w-4xl pt-4 pb-24">
+      <div className="w-full max-w-4xl space-y-4 my-4 px-2">
+        {messages.map((message) => {
+          if (message.role === "user") {
+            return (
+              <div key={message.id} className={`flex justify-end`}>
+                <div className="max-w-3xl rounded-2xl px-5 py-3 leading-relaxed bg-muted text-white">
+                  {message.content}
+                </div>
+              </div>
+            );
+          } else if (message.role === "assistant") {
+            return (
+              <div key={message.id} className="max-w-4xl px-5 py-3 prose dark:prose-invert">
+                <CustomMarkdown content={message.content} />
+              </div>
+            );
+          }
+        })}
+      </div>
+
+      {!isLoading && (
+        <div className="flex justify-center py-4">
+          <div className="w-10 h-10 rounded-full border-t-transparent border-b-transparent border-l-transparent border-r-transparent border-2 border-blue-500 animate-spin"></div>
         </div>
       )}
-    </div>
+    </ScrollArea>
   );
 }

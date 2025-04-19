@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { useChat } from "@ai-sdk/react";
+import { useChat, type Message } from "@ai-sdk/react";
 import ChatBox from "./chatBox";
 import FullChat from "./fullChat";
 
@@ -19,23 +19,15 @@ export default function ChatInterface() {
   };
 
   return (
-    <div className="flex">
-      <div className="flex w-10/12 mx-auto flex-col">
-        <div className="flex flex-1 flex-col items-center justify-between overflow-auto px-4 pt-4 h-[calc(100vh-100px)]">
-          {messages.length === 0 && (
-            <div className="mt-52 text-2xl font-semibold text-white">What can I help you with?</div>
-          )}
+    <div className="flex w-full mx-auto flex-col items-center">
+      <FullChat messages={messages as Message[]} isLoading={status === "streaming" || status === "submitted"} />
 
-          <FullChat messages={messages} isLoading={status === "streaming" || status === "submitted"} />
-
-          <ChatBox
-            messagesPresent={messages.length > 0}
-            onSubmit={handleSubmit}
-            isLoading={status === "streaming" || status === "submitted"}
-            stop={stop}
-          />
-        </div>
-      </div>
+      <ChatBox
+        messagesPresent={messages.length > 0}
+        onSubmit={handleSubmit}
+        isLoading={status === "streaming" || status === "submitted"}
+        stop={stop}
+      />
     </div>
   );
 }
