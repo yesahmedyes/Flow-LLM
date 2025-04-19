@@ -9,8 +9,8 @@ interface FullChatProps {
 
 export default function FullChat({ messages, isLoading }: FullChatProps) {
   return (
-    <ScrollArea className="w-full h-10/12 max-w-4xl pt-4 pb-24">
-      <div className="w-full max-w-4xl space-y-4 my-4 px-2">
+    <ScrollArea className="w-full max-w-4xl pt-4 pb-40">
+      <div className="w-full max-w-4xl space-y-4 my-4">
         {messages.map((message) => {
           if (message.role === "user") {
             return (
@@ -22,7 +22,7 @@ export default function FullChat({ messages, isLoading }: FullChatProps) {
             );
           } else if (message.role === "assistant") {
             return (
-              <div key={message.id} className="max-w-4xl px-5 py-3 prose dark:prose-invert">
+              <div key={message.id} className="max-w-4xl px-2 py-3 prose dark:prose-invert">
                 <CustomMarkdown content={message.content} />
               </div>
             );
@@ -30,9 +30,11 @@ export default function FullChat({ messages, isLoading }: FullChatProps) {
         })}
       </div>
 
-      {!isLoading && (
-        <div className="flex justify-center py-4">
-          <div className="w-10 h-10 rounded-full border-t-transparent border-b-transparent border-l-transparent border-r-transparent border-2 border-blue-500 animate-spin"></div>
+      {isLoading && (
+        <div className="flex justify-center items-center space-x-1 pt-8 pb-48">
+          <div className="w-1 h-1 bg-muted-foreground rounded-full animate-pulse [animation-delay:-0.3s]"></div>
+          <div className="w-1 h-1 bg-muted-foreground rounded-full animate-pulse [animation-delay:-0.15s]"></div>
+          <div className="w-1 h-1 bg-muted-foreground rounded-full animate-pulse"></div>
         </div>
       )}
     </ScrollArea>

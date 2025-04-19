@@ -28,9 +28,14 @@ export default function ChatBox({ messagesPresent, onSubmit, stop, isLoading }: 
   };
 
   return (
-    <div className={`fixed z-10 flex flex-col items-center w-full ${messagesPresent ? "bottom-8" : "bottom-1/2"}`}>
+    <div
+      className={`fixed flex flex-col items-center w-full bg-background ${messagesPresent ? "bottom-0" : "bottom-1/2"}`}
+    >
       {!messagesPresent && <div className="mb-12 text-2xl font-semibold text-white">What can I help you with?</div>}
-      <div className="rounded-2xl w-4xl border bg-background border-neutral-700 px-2 py-2">
+
+      <div
+        className={`rounded-2xl w-4xl border bg-background border-neutral-700 px-2 py-2 ${messagesPresent && "mb-8"}`}
+      >
         <div className="flex items-center">
           <Textarea
             placeholder="Ask Flow"
