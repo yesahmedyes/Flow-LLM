@@ -1,6 +1,6 @@
 import { type Message } from "ai";
 import { ScrollArea } from "./ui/scroll-area";
-import CustomMarkdown from "./customMarkdown";
+import MemoizedMarkdown from "./memoizedMarkdown";
 
 interface FullChatProps {
   messages: Message[];
@@ -8,6 +8,9 @@ interface FullChatProps {
 }
 
 export default function FullChat({ messages, isLoading }: FullChatProps) {
+  // TODO: Show Image and File Attachments
+  // TODO: Show reasoning, sources, and errors
+
   return (
     <ScrollArea className="w-full max-w-4xl pt-4 pb-40">
       <div className="w-full max-w-4xl space-y-4 my-4">
@@ -23,7 +26,7 @@ export default function FullChat({ messages, isLoading }: FullChatProps) {
           } else if (message.role === "assistant") {
             return (
               <div key={message.id} className="max-w-4xl px-2 py-3 prose dark:prose-invert">
-                <CustomMarkdown content={message.content} />
+                <MemoizedMarkdown content={message.content} id={message.id} />
               </div>
             );
           }

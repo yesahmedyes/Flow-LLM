@@ -53,7 +53,7 @@ export default function ChatBox({ messagesPresent, onSubmit, stop, isLoading }: 
                   <Add size={18} className="stroke-muted-foreground" />
                 </div>
               </PopoverTrigger>
-              <PopoverContent className="flex w-48 flex-col rounded-2xl font-light text-sm p-2">
+              <PopoverContent className="flex w-48 flex-col rounded-2xl font-light text-sm p-1.5">
                 <div className="flex flex-row gap-3 items-center cursor-pointer rounded-lg p-3 hover:bg-background/50">
                   <Image size={20} className="stroke-foreground" />
                   Image

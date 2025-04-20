@@ -9,19 +9,28 @@ import {
   SidebarMenu,
   SidebarGroupLabel,
 } from "~/app/_components/ui/sidebar";
-import { MoreVertical, ChevronDown, ChevronUp, Plus, File, Settings } from "lucide-react";
-import { useState, useEffect } from "react";
+import { MoreVertical, ChevronDown, ChevronUp, Plus, File } from "lucide-react";
+import { useState, useEffect, useMemo } from "react";
 import { Button } from "./ui/button";
 import { Setting2, Story } from "iconsax-react";
+import { useChatsStore } from "../stores/chatsStore";
+import { nanoid } from "nanoid";
+import { useRouter } from "next/navigation";
 
-interface AppSidebarProps {
-  chats: { name: string; id: string }[];
-}
-
-export function AppSidebar({ chats }: AppSidebarProps) {
+export function AppSidebar() {
   const [chatsViewMore, setChatsViewMore] = useState(false);
   const [hoveredChatId, setHoveredChatId] = useState<string | null>(null);
   const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
+
+  const chatsRecord = useChatsStore((state) => state.chats);
+  const chats = useMemo(
+    () =>
+      Object.entries(chatsRecord).map(([chatId, chat]) => ({
+        name: chat[0]?.content ?? "New chat",
+        id: chatId,
+      })),
+    [chatsRecord],
+  );
 
   // Display only 5 chats if viewMore is false, otherwise show all
   const displayedChats = chatsViewMore ? chats : chats.slice(0, 5);
@@ -30,21 +39,27 @@ export function AppSidebar({ chats }: AppSidebarProps) {
   // Effect to check for chatId in URL when component mounts or URL changes
   useEffect(() => {
     const url = new URL(window.location.href);
+
     const chatIdParam = url.searchParams.get("chatId");
+
     setSelectedChatId(chatIdParam);
   }, []);
 
   const onSelectChat = (chatId: string) => {
     const url = new URL(window.location.href);
+
     url.searchParams.set("chatId", chatId);
+
     window.history.pushState({}, "", url.toString());
+
     setSelectedChatId(chatId);
+
     console.log(`Selected chat: ${chatId}, URL updated to: ${url.toString()}`);
   };
 
   return (
     <Sidebar>
-      <SidebarHeader className="px-4 pb-4 pt-8">
+      <SidebarHeader className="px-4 pb-6 pt-8">
         <Button variant="outline" className="rounded-full" size="lg">
           <div className="flex flex-row items-center justify-center gap-2">
             <Plus size={20} /> New Chat
@@ -53,8 +68,8 @@ export function AppSidebar({ chats }: AppSidebarProps) {
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel className="pb-2">Recents</SidebarGroupLabel>
-          <SidebarMenu className="gap-0.5">
+          <SidebarGroupLabel className="pb-2.5">Recents</SidebarGroupLabel>
+          <SidebarMenu className="gap-1">
             {displayedChats.map((chat) => {
               const isSelected = selectedChatId === chat.id;
 
@@ -69,6 +84,7 @@ export function AppSidebar({ chats }: AppSidebarProps) {
                   onClick={() => onSelectChat(chat.id)}
                 >
                   <span className="truncate">{chat.name}</span>
+
                   {hoveredChatId === chat.id && <MoreVertical size={20} className="stroke-foreground ml-2" />}
                 </div>
               );
@@ -76,7 +92,7 @@ export function AppSidebar({ chats }: AppSidebarProps) {
 
             {hasMoreChats && (
               <div
-                className="cursor-pointer text-sm flex flex-row justify-center items-center font-normal text-muted-foreground hover:text-accent-foreground rounded-full px-4 py-2"
+                className="cursor-pointer text-sm flex flex-row justify-center items-center font-normal text-muted-foreground hover:text-accent-foreground rounded-full px-4 py-4"
                 onClick={() => setChatsViewMore(!chatsViewMore)}
               >
                 {chatsViewMore ? (

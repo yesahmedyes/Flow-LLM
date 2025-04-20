@@ -33,14 +33,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
       <body>
         <Provider>
           <SidebarProvider defaultOpen={false}>
-            <AppSidebar
-              chats={[
-                ...Array.from({ length: 30 }, (_, i) => ({
-                  name: `My Chat Is Pretty Veryyyyy Long ${i + 1}`,
-                  id: `chat-${i + 1}`,
-                })),
-              ]}
-            />
+            <AppSidebar />
 
             <main className="w-full h-screen">
               <SidebarTrigger />
