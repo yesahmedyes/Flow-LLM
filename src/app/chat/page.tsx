@@ -2,22 +2,10 @@
 
 import { nanoid } from "nanoid";
 import ChatInterface from "../_components/chatInterface";
-import { useEffect } from "react";
-import { useChatsStore } from "../stores/chatsStore";
+import { useState } from "react";
 
 export default function ChatPage() {
-  const id = nanoid();
-
-  const addChat = useChatsStore((state) => state.addChat);
-
-  useEffect(() => {
-    addChat({
-      id,
-      messages: [],
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    });
-  }, []);
+  const [id, _] = useState<string>(nanoid());
 
   return <ChatInterface id={id} initialMessages={[]} />;
 }

@@ -34,7 +34,9 @@ export default function ChatInterface({ id, initialMessages }: ChatInterfaceProp
   const updateChatById = useChatsStore((state) => state.updateChatById);
 
   useEffect(() => {
-    updateChatById(id as string, messages as Message[]);
+    if (messages.length > 0) {
+      updateChatById(id as string, messages as Message[]);
+    }
   }, [messages]);
 
   return (

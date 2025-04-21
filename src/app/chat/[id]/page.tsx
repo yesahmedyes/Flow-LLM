@@ -8,7 +8,7 @@ import { api } from "~/trpc/react";
 import ChatInterface from "~/app/_components/chatInterface";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
-import { Skeleton } from "~/app/_components/ui/skeleton";
+import { Loader2 } from "lucide-react";
 
 export default function ChatPage() {
   const { id } = useParams();
@@ -30,8 +30,6 @@ export default function ChatPage() {
       });
     },
     onError: () => {
-      toast.error("Failure to load chat. Redirecting to new chat...");
-
       router.replace("/chat");
     },
   });
@@ -41,20 +39,20 @@ export default function ChatPage() {
       if (!id || id.length === 0) {
         router.replace("/chat");
 
-        toast.error("Failure to load chat. Redirecting to new chat...");
+        toast.error("Invalid chat id. Redirecting to new chat...");
 
         return;
       }
 
       getChatByIdMutation.mutate({ id: id as string });
     }
-  }, [id, storedChat]);
+  }, [id]);
 
   return storedChat ? (
     <ChatInterface id={id as string} initialMessages={storedChat.messages} />
   ) : (
-    <div className="flex flex-col place-items-center justify-center h-full">
-      <Skeleton className="h-2/3 w-4xl" />
+    <div className="flex flex-col place-items-center justify-center h-full pb-20">
+      <Loader2 className="h-10 w-10 animate-spin text-muted-foreground" />
     </div>
   );
 }

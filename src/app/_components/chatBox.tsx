@@ -1,4 +1,3 @@
-/* eslint-disable jsx-a11y/alt-text */
 import { DocumentText, Image, ArrowRight, Stop } from "iconsax-react";
 
 import { Add } from "iconsax-react";

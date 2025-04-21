@@ -9,28 +9,124 @@ import {
   SidebarMenu,
   SidebarGroupLabel,
 } from "~/app/_components/ui/sidebar";
-import { MoreVertical, ChevronDown, ChevronUp, Plus, File } from "lucide-react";
-import { useState } from "react";
+import { MoreVertical, ChevronDown, Plus, File, Loader2 } from "lucide-react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Button } from "./ui/button";
-import { Setting2, Story } from "iconsax-react";
+import { Setting2, Story, Trash } from "iconsax-react";
 import { useChatsStore } from "../stores/chatsStore";
 import { useParams, useRouter } from "next/navigation";
 import { nanoid } from "nanoid";
+import { api } from "~/trpc/react";
+import { toast } from "sonner";
 
 export function AppSidebar() {
-  const [chatsViewMore, setChatsViewMore] = useState(false);
   const [hoveredChatId, setHoveredChatId] = useState<string | null>(null);
 
-  const chats = useChatsStore((state) => state.chats).sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
+  const [cursor, setCursor] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
+  const [initialLoadDone, setInitialLoadDone] = useState(false);
+
+  const loadMoreRef = useRef<HTMLDivElement>(null);
+
+  const chats = useChatsStore((state) => state.chats);
+  const setChats = useChatsStore((state) => state.setChats);
   const addChat = useChatsStore((state) => state.addChat);
 
-  // Display only 5 chats if viewMore is false, otherwise show all
-  const displayedChats = chatsViewMore ? chats : chats.slice(0, 5);
-  const hasMoreChats = chats.length > 5;
-
   const { id } = useParams();
-
   const router = useRouter();
+
+  const BATCH_SIZE = 10;
+
+  const { data: chatData } = api.chat.fetchInitialChats.useQuery(undefined, {
+    enabled: chats.length === 0,
+  });
+
+  useEffect(() => {
+    if (chatData) {
+      setChats(chatData.items);
+      setCursor(chatData.nextCursor ?? 0);
+      setHasMore(chatData.nextCursor !== null);
+    }
+  }, [chatData, setChats]);
+
+  const fetchChats = api.chat.fetchMoreChats.useMutation();
+
+  const loadMoreChats = useCallback(async () => {
+    if (!hasMore || isLoading) return;
+
+    setIsLoading(true);
+
+    try {
+      const result = await fetchChats.mutateAsync({
+        limit: BATCH_SIZE,
+        cursor,
+      });
+
+      if (result.items.length > 0) {
+        setChats([...chats, ...result.items]);
+      }
+
+      setCursor(result.nextCursor ?? cursor);
+      setHasMore(result.nextCursor !== null);
+    } catch (error) {
+      console.error("Failed to fetch more chats:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [chats, cursor, hasMore, isLoading, fetchChats, setChats]);
+
+  useEffect(() => {
+    if (!initialLoadDone) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting && !isLoading) {
+          void loadMoreChats();
+        }
+      },
+      { threshold: 0.1 },
+    );
+
+    const currentRef = loadMoreRef.current;
+
+    if (currentRef) {
+      observer.observe(currentRef);
+    }
+
+    return () => {
+      if (currentRef) {
+        observer.disconnect();
+      }
+    };
+  }, [initialLoadDone, loadMoreChats]);
+
+  const handleLoadMore = () => {
+    void loadMoreChats();
+
+    setInitialLoadDone(true);
+  };
+
+  const deleteChat = api.chat.deleteChat.useMutation();
+
+  const removeChatById = useChatsStore((state) => state.removeChatById);
+
+  const handleDeleteChat = (chatId: string) => {
+    void deleteChat.mutate(
+      { id: chatId },
+      {
+        onSuccess: () => {
+          toast.success("Chat deleted successfully");
+        },
+      },
+    );
+
+    removeChatById(chatId);
+
+    if (chatId === id) {
+      router.replace("/chat");
+    }
+  };
 
   const onSelectChat = (chatId: string) => {
     if (chatId === id) {
@@ -41,16 +137,16 @@ export function AppSidebar() {
   };
 
   const onNewChat = () => {
-    const id = nanoid();
+    const newChatId = nanoid();
 
     addChat({
-      id,
+      id: newChatId,
       messages: [],
       createdAt: new Date(),
       updatedAt: new Date(),
     });
 
-    router.push(`/chat/${id}`);
+    router.push(`/chat/${newChatId}`);
   };
 
   return (
@@ -65,44 +161,45 @@ export function AppSidebar() {
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupLabel className="pb-2.5">Recents</SidebarGroupLabel>
-          <SidebarMenu className="gap-1">
-            {displayedChats.map((chat) => {
-              const isSelected = id === chat.id;
+          <SidebarMenu className="gap-1 max-h-[60vh] overflow-y-auto">
+            {chats
+              .sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime())
+              .map((chat) => {
+                const isSelected = id === chat.id;
 
-              return (
-                <div
-                  className={`cursor-pointer text-sm flex flex-row justify-between items-center font-light text-accent-foreground ${
-                    isSelected ? "bg-accent/50" : "hover:bg-accent/50"
-                  } rounded-lg pl-4 pr-3 py-2.5`}
-                  key={chat.id}
-                  onMouseEnter={() => setHoveredChatId(chat.id)}
-                  onMouseLeave={() => setHoveredChatId(null)}
-                  onClick={() => onSelectChat(chat.id)}
-                >
-                  <span className="truncate">{chat.messages[0]?.content ?? "New chat"}</span>
+                return (
+                  <div
+                    className={`cursor-pointer text-sm flex flex-row justify-between items-center font-light text-accent-foreground ${
+                      isSelected ? "bg-accent/50" : "hover:bg-accent/50"
+                    } rounded-lg pl-4 pr-3 py-2.5`}
+                    key={chat.id}
+                    onMouseEnter={() => setHoveredChatId(chat.id)}
+                    onMouseLeave={() => setHoveredChatId(null)}
+                    onClick={() => onSelectChat(chat.id)}
+                  >
+                    <span className="truncate w-full">{chat.messages[0]?.content ?? "New chat"}</span>
 
-                  {hoveredChatId === chat.id && <MoreVertical size={20} className="stroke-foreground ml-2" />}
-                </div>
-              );
-            })}
+                    {hoveredChatId === chat.id && (
+                      <Trash
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteChat(chat.id);
+                        }}
+                        size={18}
+                        className="stroke-foreground ml-3"
+                      />
+                    )}
+                  </div>
+                );
+              })}
 
-            {hasMoreChats && (
+            {hasMore && (
               <div
-                className="cursor-pointer text-sm flex flex-row justify-center items-center font-normal text-muted-foreground hover:text-accent-foreground rounded-full px-4 py-4"
-                onClick={() => setChatsViewMore(!chatsViewMore)}
-                key="view-more-button"
+                ref={loadMoreRef}
+                className="flex justify-center items-center py-2 text-muted-foreground cursor-pointer hover:bg-accent/30 rounded-md"
+                onClick={initialLoadDone ? undefined : handleLoadMore}
               >
-                {chatsViewMore ? (
-                  <>
-                    <span>View Less</span>
-                    <ChevronUp size={16} className="ml-1" />
-                  </>
-                ) : (
-                  <>
-                    <span>View More</span>
-                    <ChevronDown size={16} className="ml-1" />
-                  </>
-                )}
+                {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ChevronDown size={16} />}
               </div>
             )}
           </SidebarMenu>
