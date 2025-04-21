@@ -1,9 +1,5 @@
-import ChatInterface from "./_components/chatInterface";
+import { redirect } from "next/navigation";
 
 export default function Home() {
-  return (
-    <div className="flex flex-col">
-      <ChatInterface />
-    </div>
-  );
+  redirect("/chat");
 }

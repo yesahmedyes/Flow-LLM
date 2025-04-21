@@ -1,6 +1,7 @@
 import { type Message } from "ai";
 import { ScrollArea } from "./ui/scroll-area";
 import MemoizedMarkdown from "./memoizedMarkdown";
+import { useEffect, useRef } from "react";
 
 interface FullChatProps {
   messages: Message[];
@@ -11,8 +12,38 @@ export default function FullChat({ messages, isLoading }: FullChatProps) {
   // TODO: Show Image and File Attachments
   // TODO: Show reasoning, sources, and errors
 
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const prevMessagesLengthRef = useRef<number>(0);
+  const lastContentLengthRef = useRef<number>(0);
+
+  useEffect(() => {
+    // Check if number of messages has increased
+    if (messages.length > prevMessagesLengthRef.current) {
+      if (scrollAreaRef.current) {
+        scrollAreaRef.current.scrollIntoView({ behavior: "smooth", block: "end" });
+      }
+
+      prevMessagesLengthRef.current = messages.length;
+      
+      lastContentLengthRef.current = messages[messages.length - 1]?.content.length ?? 0;
+    }
+    // Or if the last message's content length has increased substantially
+    else if (messages.length > 0) {
+      const currentContentLength = messages[messages.length - 1]?.content.length ?? 0;
+
+      // Only scroll if content length increased by at least 300 characters
+      if (currentContentLength > lastContentLengthRef.current + 300) {
+        if (scrollAreaRef.current) {
+          scrollAreaRef.current.scrollIntoView({ behavior: "smooth", block: "end" });
+        }
+
+        lastContentLengthRef.current = currentContentLength;
+      }
+    }
+  }, [messages]);
+
   return (
-    <ScrollArea className="w-full max-w-4xl pt-4 pb-40">
+    <ScrollArea ref={scrollAreaRef} className="w-full max-w-4xl pt-4 pb-40">
       <div className="w-full max-w-4xl space-y-4 my-4">
         {messages.map((message) => {
           if (message.role === "user") {

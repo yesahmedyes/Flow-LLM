@@ -10,57 +10,53 @@ import {
   SidebarGroupLabel,
 } from "~/app/_components/ui/sidebar";
 import { MoreVertical, ChevronDown, ChevronUp, Plus, File } from "lucide-react";
-import { useState, useEffect, useMemo } from "react";
+import { useState } from "react";
 import { Button } from "./ui/button";
 import { Setting2, Story } from "iconsax-react";
 import { useChatsStore } from "../stores/chatsStore";
+import { useParams, useRouter } from "next/navigation";
 import { nanoid } from "nanoid";
-import { useRouter } from "next/navigation";
 
 export function AppSidebar() {
   const [chatsViewMore, setChatsViewMore] = useState(false);
   const [hoveredChatId, setHoveredChatId] = useState<string | null>(null);
-  const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
 
-  const chatsRecord = useChatsStore((state) => state.chats);
-  const chats = useMemo(
-    () =>
-      Object.entries(chatsRecord).map(([chatId, chat]) => ({
-        name: chat[0]?.content ?? "New chat",
-        id: chatId,
-      })),
-    [chatsRecord],
-  );
+  const chats = useChatsStore((state) => state.chats).sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
+  const addChat = useChatsStore((state) => state.addChat);
 
   // Display only 5 chats if viewMore is false, otherwise show all
   const displayedChats = chatsViewMore ? chats : chats.slice(0, 5);
   const hasMoreChats = chats.length > 5;
 
-  // Effect to check for chatId in URL when component mounts or URL changes
-  useEffect(() => {
-    const url = new URL(window.location.href);
+  const { id } = useParams();
 
-    const chatIdParam = url.searchParams.get("chatId");
-
-    setSelectedChatId(chatIdParam);
-  }, []);
+  const router = useRouter();
 
   const onSelectChat = (chatId: string) => {
-    const url = new URL(window.location.href);
+    if (chatId === id) {
+      return;
+    }
 
-    url.searchParams.set("chatId", chatId);
+    router.push(`/chat/${chatId}`);
+  };
 
-    window.history.pushState({}, "", url.toString());
+  const onNewChat = () => {
+    const id = nanoid();
 
-    setSelectedChatId(chatId);
+    addChat({
+      id,
+      messages: [],
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
 
-    console.log(`Selected chat: ${chatId}, URL updated to: ${url.toString()}`);
+    router.push(`/chat/${id}`);
   };
 
   return (
     <Sidebar>
       <SidebarHeader className="px-4 pb-6 pt-8">
-        <Button variant="outline" className="rounded-full" size="lg">
+        <Button variant="outline" className="rounded-full" size="lg" onClick={onNewChat}>
           <div className="flex flex-row items-center justify-center gap-2">
             <Plus size={20} /> New Chat
           </div>
@@ -71,7 +67,7 @@ export function AppSidebar() {
           <SidebarGroupLabel className="pb-2.5">Recents</SidebarGroupLabel>
           <SidebarMenu className="gap-1">
             {displayedChats.map((chat) => {
-              const isSelected = selectedChatId === chat.id;
+              const isSelected = id === chat.id;
 
               return (
                 <div
@@ -83,7 +79,7 @@ export function AppSidebar() {
                   onMouseLeave={() => setHoveredChatId(null)}
                   onClick={() => onSelectChat(chat.id)}
                 >
-                  <span className="truncate">{chat.name}</span>
+                  <span className="truncate">{chat.messages[0]?.content ?? "New chat"}</span>
 
                   {hoveredChatId === chat.id && <MoreVertical size={20} className="stroke-foreground ml-2" />}
                 </div>
@@ -94,6 +90,7 @@ export function AppSidebar() {
               <div
                 className="cursor-pointer text-sm flex flex-row justify-center items-center font-normal text-muted-foreground hover:text-accent-foreground rounded-full px-4 py-4"
                 onClick={() => setChatsViewMore(!chatsViewMore)}
+                key="view-more-button"
               >
                 {chatsViewMore ? (
                   <>
@@ -113,13 +110,13 @@ export function AppSidebar() {
       </SidebarContent>
       <SidebarFooter className="pt-4 pb-6">
         <div className="flex flex-col gap-1">
-          <Button variant="ghost" className="justify-start" size="lg">
+          <Button variant="ghost" className="justify-start" size="lg" key="files-button">
             <File className="stroke-muted-foreground" /> Files
           </Button>
-          <Button variant="ghost" className="justify-start" size="lg">
+          <Button variant="ghost" className="justify-start" size="lg" key="memories-button">
             <Story className="stroke-muted-foreground" /> Memories
           </Button>
-          <Button variant="ghost" className="justify-start" size="lg">
+          <Button variant="ghost" className="justify-start" size="lg" key="settings-button">
             <Setting2 className="stroke-muted-foreground" /> Settings
           </Button>
         </div>

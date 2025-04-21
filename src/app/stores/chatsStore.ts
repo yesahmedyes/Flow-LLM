@@ -1,26 +1,30 @@
-import type { UIMessage } from "ai";
+import type { Message } from "ai";
 import { create } from "zustand";
+import type { chats } from "~/server/db/schema";
+
+export type Chat = typeof chats.$inferSelect;
 
 interface ChatsStore {
-  chats: Record<string, UIMessage[]>;
-  setChats: (chats: Record<string, UIMessage[]>) => void;
-  getChatById: (chatId: string) => UIMessage[];
-  updateChatById: (chatId: string, messages: UIMessage[]) => void;
+  chats: Chat[];
+  setChats: (chats: Chat[]) => void;
+  getChatById: (chatId: string) => Chat | null;
+  addChat: (chat: Chat) => void;
+  updateChatById: (chatId: string, messages: Message[]) => void;
 }
 
 export const useChatsStore = create<ChatsStore>((set) => ({
-  chats: {},
+  chats: [],
   setChats: (chats) => set({ chats }),
-  getChatById: (chatId: string): UIMessage[] => {
+
+  getChatById: (chatId: string): Chat | null => {
     const { chats } = useChatsStore.getState();
 
-    return chats[chatId] ?? [];
+    return chats.find((chat) => chat.id === chatId) ?? null;
   },
-  updateChatById: (chatId, messages) =>
+  addChat: (chat) => set((state) => ({ chats: [...state.chats, chat] })),
+  updateChatById: (chatId: string, messages: Message[]) => {
     set((state) => ({
-      chats: {
-        ...state.chats,
-        [chatId]: messages,
-      },
-    })),
+      chats: state.chats.map((c) => (c.id === chatId ? { ...c, messages } : c)),
+    }));
+  },
 }));

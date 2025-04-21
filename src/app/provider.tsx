@@ -2,12 +2,15 @@
 
 import * as React from "react";
 import { ThemeProvider as NextThemesProvider } from "next-themes";
+import { TRPCReactProvider } from "~/trpc/react";
 
 export default function Provider({ children }: { children: React.ReactNode }) {
   return (
-    <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
-      {children}
-    </ThemeProvider>
+    <TRPCReactProvider>
+      <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
+        {children}
+      </ThemeProvider>
+    </TRPCReactProvider>
   );
 }
 

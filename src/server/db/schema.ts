@@ -1,18 +1,24 @@
+import type { Message } from "ai";
 import { sql } from "drizzle-orm";
-import { index, sqliteTableCreator } from "drizzle-orm/sqlite-core";
+import { blob, index, integer, sqliteTableCreator } from "drizzle-orm/sqlite-core";
 
 export const createTable = sqliteTableCreator((name) => `flowgpt_${name}`);
 
 export const chats = createTable(
   "chat",
-  (d) => ({
-    id: d.integer({ mode: "number" }).primaryKey({ autoIncrement: true }),
-    name: d.text({ length: 256 }),
-    createdAt: d
-      .integer({ mode: "timestamp" })
+  (chat) => ({
+    id: chat
+      .text({ length: 256 })
+      .default(sql`(randomblob(16))`)
+      .primaryKey(),
+    messages: blob({ mode: "json" }).$type<Message[]>().notNull(),
+    createdAt: integer({ mode: "timestamp" })
       .default(sql`(unixepoch())`)
       .notNull(),
-    updatedAt: d.integer({ mode: "timestamp" }).$onUpdate(() => new Date()),
+    updatedAt: integer({ mode: "timestamp" })
+      .$onUpdate(() => new Date())
+      .default(sql`(unixepoch())`)
+      .notNull(),
   }),
-  (t) => [index("name_idx").on(t.name)],
+  (t) => [index("id_idx").on(t.id), index("updated_at_idx").on(t.updatedAt)],
 );
