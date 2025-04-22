@@ -11,6 +11,7 @@ interface FullChatProps {
 export default function FullChat({ messages, isLoading }: FullChatProps) {
   // TODO: Show Image and File Attachments
   // TODO: Show reasoning, sources, and errors
+  // TODO: Edit last sent message and resend
 
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const prevMessagesLengthRef = useRef<number>(0);
@@ -24,7 +25,7 @@ export default function FullChat({ messages, isLoading }: FullChatProps) {
       }
 
       prevMessagesLengthRef.current = messages.length;
-      
+
       lastContentLengthRef.current = messages[messages.length - 1]?.content.length ?? 0;
     }
     // Or if the last message's content length has increased substantially

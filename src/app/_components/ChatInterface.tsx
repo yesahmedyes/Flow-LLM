@@ -6,6 +6,7 @@ import ChatBox from "./chatBox";
 import FullChat from "./fullChat";
 import { useChatsStore } from "../stores/chatsStore";
 import type { Message } from "ai";
+import { useUser } from "@clerk/nextjs";
 
 interface ChatInterfaceProps {
   id: string;
@@ -13,6 +14,8 @@ interface ChatInterfaceProps {
 }
 
 export default function ChatInterface({ id, initialMessages }: ChatInterfaceProps) {
+  const { user } = useUser();
+
   const { messages, status, stop, append } = useChat({
     id: id as string,
     initialMessages: initialMessages,
@@ -35,7 +38,7 @@ export default function ChatInterface({ id, initialMessages }: ChatInterfaceProp
 
   useEffect(() => {
     if (messages.length > 0) {
-      updateChatById(id as string, messages as Message[]);
+      updateChatById(id as string, messages as Message[], user!.id as string);
     }
   }, [messages]);
 

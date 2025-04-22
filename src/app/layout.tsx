@@ -7,6 +7,7 @@ import { Toaster } from "sonner";
 import Provider from "./provider";
 import { SidebarProvider, SidebarTrigger } from "./_components/ui/sidebar";
 import { AppSidebar } from "./_components/appSidebar";
+import { useUser } from "@clerk/nextjs";
 
 export const metadata: Metadata = {
   title: "FlowGPT",

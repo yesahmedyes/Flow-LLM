@@ -24,6 +24,8 @@ export default function ChatPage() {
     onSuccess: (data) => {
       addChat({
         id: data.id,
+        userId: data.userId,
+        name: data.name,
         messages: data.messages,
         createdAt: data.createdAt,
         updatedAt: data.updatedAt,

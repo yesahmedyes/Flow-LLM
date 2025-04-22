@@ -28,7 +28,7 @@ export default function ChatBox({ messagesPresent, onSubmit, stop, isLoading }: 
 
   return (
     <div
-      className={`fixed flex flex-col items-center w-full bg-background ${messagesPresent ? "bottom-0" : "bottom-1/2"}`}
+      className={`fixed flex flex-col items-center w-full bg-background ${messagesPresent ? "bottom-0" : "bottom-1/2 -mb-6"}`}
     >
       {!messagesPresent && <div className="mb-12 text-2xl font-semibold text-white">What can I help you with?</div>}
 

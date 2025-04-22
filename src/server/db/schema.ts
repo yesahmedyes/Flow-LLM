@@ -1,6 +1,6 @@
 import type { Message } from "ai";
 import { sql } from "drizzle-orm";
-import { blob, index, integer, sqliteTableCreator } from "drizzle-orm/sqlite-core";
+import { blob, index, integer, sqliteTableCreator, text } from "drizzle-orm/sqlite-core";
 
 export const createTable = sqliteTableCreator((name) => `flowgpt_${name}`);
 
@@ -9,8 +9,10 @@ export const chats = createTable(
   (chat) => ({
     id: chat
       .text({ length: 256 })
-      .default(sql`(randomblob(16))`)
-      .primaryKey(),
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    userId: text({ length: 256 }).notNull(), // Clerk user ID
+    name: text({ length: 256 }).notNull().default("New Chat"),
     messages: blob({ mode: "json" }).$type<Message[]>().notNull(),
     createdAt: integer({ mode: "timestamp" })
       .default(sql`(unixepoch())`)

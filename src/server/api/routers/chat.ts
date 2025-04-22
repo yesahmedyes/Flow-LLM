@@ -1,15 +1,17 @@
 import { z } from "zod";
 
-import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, protectedProcedure, publicProcedure } from "~/server/api/trpc";
 import { type Message } from "ai";
 import { db } from "~/server/db";
 import { chats } from "~/server/db/schema";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, and } from "drizzle-orm";
 
 export const chatRouter = createTRPCRouter({
-  getChatById: publicProcedure.input(z.object({ id: z.string() })).mutation(async ({ input }) => {
+  getChatById: protectedProcedure.input(z.object({ id: z.string() })).mutation(async ({ ctx, input }) => {
+    const { user } = ctx;
+
     const chat = await db.query.chats.findFirst({
-      where: eq(chats.id, input.id),
+      where: and(eq(chats.id, input.id), eq(chats.userId, user.id)),
     });
 
     if (!chat) {
@@ -18,8 +20,11 @@ export const chatRouter = createTRPCRouter({
 
     return chat;
   }),
-  fetchInitialChats: publicProcedure.query(async () => {
+  fetchInitialChats: protectedProcedure.query(async ({ ctx }) => {
+    const { user } = ctx;
+
     const chatsList = await db.query.chats.findMany({
+      where: eq(chats.userId, user.id),
       orderBy: [desc(chats.updatedAt)],
       limit: 5,
       offset: 0,
@@ -33,17 +38,19 @@ export const chatRouter = createTRPCRouter({
       nextCursor: hasMore ? nextCursor : null,
     };
   }),
-  fetchMoreChats: publicProcedure
+  fetchMoreChats: protectedProcedure
     .input(
       z.object({
         limit: z.number().min(1).default(10),
         cursor: z.number().default(0),
       }),
     )
-    .mutation(async ({ input }) => {
+    .mutation(async ({ ctx, input }) => {
       const { limit, cursor } = input;
+      const { user } = ctx;
 
       const chatsList = await db.query.chats.findMany({
+        where: eq(chats.userId, user.id),
         orderBy: [desc(chats.updatedAt)],
         limit: limit,
         offset: cursor,
@@ -57,13 +64,16 @@ export const chatRouter = createTRPCRouter({
         nextCursor: hasMore ? nextCursor : null,
       };
     }),
-  upsertChat: publicProcedure
+  upsertChat: protectedProcedure
     .input(z.object({ id: z.string(), messages: z.array(z.custom<Message>()) }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ ctx, input }) => {
+      const { user } = ctx;
+
       return db
         .insert(chats)
         .values({
           id: input.id,
+          userId: user.id,
           messages: input.messages,
         })
         .onConflictDoUpdate({
@@ -71,7 +81,19 @@ export const chatRouter = createTRPCRouter({
           set: { messages: input.messages },
         });
     }),
-  deleteChat: publicProcedure.input(z.object({ id: z.string() })).mutation(async ({ input }) => {
-    await db.delete(chats).where(eq(chats.id, input.id));
+  updateChatName: protectedProcedure
+    .input(z.object({ id: z.string(), name: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const { user } = ctx;
+
+      await db
+        .update(chats)
+        .set({ name: input.name })
+        .where(and(eq(chats.id, input.id), eq(chats.userId, user.id)));
+    }),
+  deleteChat: protectedProcedure.input(z.object({ id: z.string() })).mutation(async ({ ctx, input }) => {
+    const { user } = ctx;
+
+    await db.delete(chats).where(and(eq(chats.id, input.id), eq(chats.userId, user.id)));
   }),
 });

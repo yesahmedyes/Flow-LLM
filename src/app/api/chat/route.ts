@@ -1,12 +1,22 @@
 import openai from "~/server/openai/init";
 import { appendResponseMessages, streamText, type Message } from "ai";
 import { saveChat } from "~/lib/helpers/saveChat";
+import { auth } from "@clerk/nextjs/server";
 
 export const maxDuration = 60;
 
 export async function POST(req: Request) {
   try {
-    const { messages, id } = (await req.json()) as { messages: Message[]; id: string };
+    const { messages, id } = (await req.json()) as { messages: Message[]; id: string; userId: string };
+
+    const { userId } = await auth();
+
+    if (!userId) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
 
     const systemPrompt = `
       You are an intelligent and helpful AI assistant designed to provide thoughtful, articulate, and accurate responses to user queries. You are capable of answering questions across a wide range of topics including science, technology, education, art, philosophy, and daily life.
@@ -35,6 +45,7 @@ export async function POST(req: Request) {
             messages: messages as Message[],
             responseMessages: response.messages,
           }),
+          userId,
         });
       },
     });
@@ -42,7 +53,7 @@ export async function POST(req: Request) {
     return result.toDataStreamResponse({
       sendSources: true,
       sendReasoning: true,
-      getErrorMessage: (error) => {
+      getErrorMessage: (_) => {
         return "An unknown error occurred. Please try again later.";
       },
     });
