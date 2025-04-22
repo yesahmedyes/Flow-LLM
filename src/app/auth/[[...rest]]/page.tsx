@@ -7,7 +7,7 @@ import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
 export default function AuthPage() {
-  // TODO: Test redirect to home page after sign in
+  // TODO: Redirect to home page after sign in
 
   const [currentTextIndex, setCurrentTextIndex] = useState(0);
   const [displayText, setDisplayText] = useState("");

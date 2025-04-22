@@ -12,7 +12,7 @@ import {
 import { ChevronDown, Plus, File, Loader2, Pencil, X } from "lucide-react";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Button } from "./ui/button";
-import { Setting2, Story, Trash } from "iconsax-react";
+import { Story, Thorchain, Trash } from "iconsax-react";
 import { useChatsStore } from "../stores/chatsStore";
 import { useParams, useRouter } from "next/navigation";
 import { nanoid } from "nanoid";
@@ -20,6 +20,7 @@ import { api } from "~/trpc/react";
 import { toast } from "sonner";
 import { useUser } from "@clerk/nextjs";
 import { Input } from "./ui/input";
+import { ThemeButton } from "./themeButton";
 
 export function AppSidebar() {
   const user = useUser();
@@ -223,7 +224,7 @@ function CustomSidebar({ userId }: { userId: string }) {
                         />
                         <div
                           className="font-light py-2 cursor-pointer text-foreground"
-                          onClick={() => setEditChatId(null)}
+                          onClick={() => handleSaveName(chat.id, editChatName)}
                         >
                           Save
                         </div>
@@ -255,7 +256,7 @@ function CustomSidebar({ userId }: { userId: string }) {
                 );
               })}
 
-            {hasMore && (
+            {chats.length > 0 && hasMore && (
               <div
                 ref={loadMoreRef}
                 className="flex justify-center items-center py-2 text-muted-foreground cursor-pointer hover:bg-accent/30 rounded-md"
@@ -275,8 +276,8 @@ function CustomSidebar({ userId }: { userId: string }) {
           <Button variant="ghost" className="justify-start" size="lg" key="memories-button">
             <Story className="stroke-muted-foreground" /> Memories
           </Button>
-          <Button variant="ghost" className="justify-start" size="lg" key="settings-button">
-            <Setting2 className="stroke-muted-foreground" /> Settings
+          <Button variant="ghost" className="justify-start" size="lg" key="models-button">
+            <Thorchain className="stroke-muted-foreground" /> Models
           </Button>
         </div>
       </SidebarFooter>

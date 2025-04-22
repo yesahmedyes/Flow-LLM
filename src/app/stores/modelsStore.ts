@@ -3,11 +3,11 @@ import type { Model } from "~/lib/types/model";
 
 interface ModelsStore {
   allModels: Model[];
-  preferredModels: Model[];
+  preferredModels: string[];
   setAllModels: (models: Model[]) => void;
-  setPreferredModels: (models: Model[]) => void;
-  addPreferredModel: (model: Model) => void;
-  removePreferredModel: (model: Model) => void;
+  setPreferredModels: (models: string[]) => void;
+  addPreferredModel: (model: string) => void;
+  removePreferredModel: (model: string) => void;
 }
 
 export const useModelsStore = create<ModelsStore>()((set) => ({
@@ -21,6 +21,6 @@ export const useModelsStore = create<ModelsStore>()((set) => ({
     })),
   removePreferredModel: (model) =>
     set((state) => ({
-      preferredModels: state.preferredModels.filter((m) => m.id !== model.id),
+      preferredModels: state.preferredModels.filter((m) => m !== model),
     })),
 }));
