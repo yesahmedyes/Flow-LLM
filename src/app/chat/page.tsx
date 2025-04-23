@@ -1,7 +1,7 @@
 "use client";
 
 import { nanoid } from "nanoid";
-import ChatInterface from "../_components/chatInterface";
+import ChatInterface from "./_components/chatInterface";
 import { useState } from "react";
 
 export default function ChatPage() {

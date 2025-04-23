@@ -10,7 +10,7 @@ async function getUserModels(userId: string) {
   if (!raw) return null;
 
   try {
-    return JSON.parse(raw) as string[];
+    return raw;
   } catch {
     return null;
   }
@@ -27,7 +27,7 @@ export async function GET(_: Request) {
 
   const models = await getUserModels(userId);
 
-  return NextResponse.json(models);
+  return NextResponse.json(models ?? ["gpt-4o-mini"]);
 }
 
 export async function POST(req: Request) {

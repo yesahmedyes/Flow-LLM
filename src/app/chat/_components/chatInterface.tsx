@@ -1,12 +1,13 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useChat } from "@ai-sdk/react";
 import ChatBox from "./chatBox";
 import FullChat from "./fullChat";
-import { useChatsStore } from "../stores/chatsStore";
+import { useChatsStore } from "../../stores/chatsStore";
 import type { Message } from "ai";
 import { useUser } from "@clerk/nextjs";
+import { useModelsStore } from "~/app/stores/modelsStore";
 
 interface ChatInterfaceProps {
   id: string;
@@ -15,6 +16,8 @@ interface ChatInterfaceProps {
 
 export default function ChatInterface({ id, initialMessages }: ChatInterfaceProps) {
   const { user } = useUser();
+
+  const { selectedModel } = useModelsStore();
 
   const { messages, status, stop, append } = useChat({
     id: id as string,
@@ -28,10 +31,17 @@ export default function ChatInterface({ id, initialMessages }: ChatInterfaceProp
     }
 
     // Use the append function from useChat to add messages
-    await append({
-      role: "user",
-      content: message,
-    });
+    await append(
+      {
+        role: "user",
+        content: message,
+      },
+      {
+        body: {
+          model: selectedModel,
+        },
+      },
+    );
   };
 
   const updateChatById = useChatsStore((state) => state.updateChatById);

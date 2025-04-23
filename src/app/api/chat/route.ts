@@ -7,7 +7,11 @@ export const maxDuration = 60;
 
 export async function POST(req: Request) {
   try {
-    const { messages, id } = (await req.json()) as { messages: Message[]; id: string; userId: string };
+    const { messages, id, model } = (await req.json()) as {
+      messages: Message[];
+      id: string;
+      model: string;
+    };
 
     const { userId } = await auth();
 
@@ -35,7 +39,7 @@ export async function POST(req: Request) {
     `;
 
     const result = streamText({
-      model: openai("gpt-4o-mini"),
+      model: openai(model),
       system: systemPrompt,
       messages,
       async onFinish({ response }) {

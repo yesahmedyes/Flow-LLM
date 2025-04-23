@@ -1,0 +1,196 @@
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
+import { useModelsStore } from "../stores/modelsStore";
+import type { Model } from "~/lib/types/model";
+import { ScrollArea } from "../_components/ui/scroll-area";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "../_components/ui/sheet";
+import { Input } from "../_components/ui/input";
+import { Separator } from "../_components/ui/separator";
+import Loader from "../_components/loader";
+import { Badge } from "../_components/ui/badge";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "../_components/ui/card";
+import { Heart } from "iconsax-react";
+
+export default function ModelsPage() {
+  const { allModels, setAllModels, preferredModels, setPreferredModels } = useModelsStore();
+
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const [selectedModel, setSelectedModel] = useState<Model | null>(null);
+
+  const [isOpen, setIsOpen] = useState(false);
+
+  useEffect(() => {
+    if (allModels.length > 0) return;
+
+    const fetchModels = async () => {
+      const response = await fetch("/api/models");
+      const data = (await response.json()) as Model[];
+      setAllModels(data);
+    };
+
+    void fetchModels();
+  }, []);
+
+  const filteredModels = useMemo(
+    () => allModels.filter((model) => model.name.toLowerCase().includes(searchQuery.toLowerCase())),
+    [allModels, searchQuery],
+  );
+
+  const sortedModels = useMemo(() => {
+    return filteredModels.sort((a, b) => {
+      const aIsPreferred = preferredModels.includes(a.id);
+      const bIsPreferred = preferredModels.includes(b.id);
+
+      if (aIsPreferred && !bIsPreferred) return -1;
+      if (!aIsPreferred && bIsPreferred) return 1;
+
+      return 0;
+    });
+  }, [filteredModels]);
+
+  const togglePreferred = (e: React.MouseEvent, modelId: string) => {
+    e.stopPropagation();
+
+    if (preferredModels.includes(modelId)) {
+      const updatedModels = preferredModels.filter((model) => model !== modelId);
+
+      setPreferredModels(updatedModels);
+      void savePreferredModels(updatedModels);
+    } else {
+      const updatedModels = [...preferredModels, modelId];
+
+      setPreferredModels(updatedModels);
+      void savePreferredModels(updatedModels);
+    }
+  };
+
+  const savePreferredModels = async (models: string[]) => {
+    try {
+      await fetch("/api/prefs/models", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ models }),
+      });
+    } catch (error) {
+      console.error("Failed to save preferred models:", error);
+    }
+  };
+
+  return allModels.length > 0 ? (
+    <div className="w-full h-screen overflow-y-auto">
+      <div className="max-w-9/12 mx-auto py-8">
+        <Input
+          className="mb-5 h-11"
+          type="search"
+          placeholder="Search models..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+        />
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {sortedModels.map((model) => (
+            <Card
+              key={model.id}
+              className="cursor-pointer relative"
+              onClick={() => {
+                setSelectedModel(model);
+                setIsOpen(true);
+              }}
+            >
+              <CardHeader>
+                <CardTitle className="font-medium text-base">{model.name}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground line-clamp-2">{model.description}</p>
+              </CardContent>
+              <CardFooter className="flex flex-row justify-between items-center mt-auto">
+                <Badge variant="outline">{model.architecture.modality}</Badge>
+                <Heart
+                  size={20}
+                  className={`${preferredModels.includes(model.id) ? "fill-foreground stroke-foreground" : "stroke-muted-foreground"}`}
+                  onClick={(e) => togglePreferred(e, model.id)}
+                />
+              </CardFooter>
+            </Card>
+          ))}
+        </div>
+      </div>
+
+      <Sheet open={isOpen && selectedModel !== null} onOpenChange={setIsOpen}>
+        <SheetContent side="right" className="sm:max-w-md overflow-y-auto pb-12">
+          {selectedModel && (
+            <>
+              <SheetHeader>
+                <SheetTitle>{selectedModel.name}</SheetTitle>
+                <SheetDescription>{selectedModel.description}</SheetDescription>
+              </SheetHeader>
+
+              <div className="flex flex-col gap-4 px-6 pb-4">
+                <h4 className="text-sm font-medium">Architecture</h4>
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  <div className="text-muted-foreground">Modality</div>
+                  <div>{selectedModel.architecture.modality}</div>
+
+                  <div className="text-muted-foreground">Input</div>
+                  <div>{selectedModel.architecture.input_modalities.join(", ")}</div>
+
+                  <div className="text-muted-foreground">Output</div>
+                  <div>{selectedModel.architecture.output_modalities.join(", ")}</div>
+
+                  <div className="text-muted-foreground">Tokenizer</div>
+                  <div>{selectedModel.architecture.tokenizer}</div>
+
+                  <div className="text-muted-foreground">Instruct Type</div>
+                  <div>{selectedModel.architecture.instruct_type}</div>
+                </div>
+              </div>
+
+              <Separator />
+
+              <div className="flex flex-col gap-4 p-6">
+                <h4 className="text-sm font-medium">Pricing</h4>
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  <div className="text-muted-foreground">Prompt</div>
+                  <div>${selectedModel.pricing.prompt}</div>
+
+                  <div className="text-muted-foreground">Completion</div>
+                  <div>${selectedModel.pricing.completion}</div>
+
+                  <div className="text-muted-foreground">Request</div>
+                  <div>${selectedModel.pricing.request}</div>
+
+                  {selectedModel.pricing.image && (
+                    <>
+                      <div className="text-muted-foreground">Image</div>
+                      <div>${selectedModel.pricing.image}</div>
+                    </>
+                  )}
+
+                  {selectedModel.pricing.web_search && (
+                    <>
+                      <div className="text-muted-foreground">Web Search</div>
+                      <div>${selectedModel.pricing.web_search}</div>
+                    </>
+                  )}
+
+                  {selectedModel.pricing.internal_reasoning && (
+                    <>
+                      <div className="text-muted-foreground">Internal Reasoning</div>
+                      <div>${selectedModel.pricing.internal_reasoning}</div>
+                    </>
+                  )}
+                </div>
+              </div>
+            </>
+          )}
+        </SheetContent>
+      </Sheet>
+    </div>
+  ) : (
+    <Loader />
+  );
+}

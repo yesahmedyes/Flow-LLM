@@ -1,6 +1,6 @@
 import { type Message } from "ai";
-import { ScrollArea } from "./ui/scroll-area";
-import MemoizedMarkdown from "./memoizedMarkdown";
+import { ScrollArea } from "../../_components/ui/scroll-area";
+import MemoizedMarkdown from "../../_components/memoizedMarkdown";
 import { useEffect, useRef } from "react";
 
 interface FullChatProps {
@@ -44,13 +44,13 @@ export default function FullChat({ messages, isLoading }: FullChatProps) {
   }, [messages]);
 
   return (
-    <ScrollArea ref={scrollAreaRef} className="w-full max-w-4xl pt-4 pb-40">
+    <ScrollArea ref={scrollAreaRef} className="w-full max-w-4xl pt-16 pb-40">
       <div className="w-full max-w-4xl space-y-4 my-4">
         {messages.map((message) => {
           if (message.role === "user") {
             return (
               <div key={message.id} className={`flex justify-end`}>
-                <div className="max-w-3xl rounded-2xl px-5 py-3 leading-relaxed bg-muted text-white">
+                <div className="max-w-3xl rounded-2xl px-5 py-3 leading-relaxed bg-muted text-white whitespace-pre-wrap">
                   {message.content}
                 </div>
               </div>

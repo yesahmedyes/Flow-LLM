@@ -5,10 +5,10 @@ import { useEffect, useMemo } from "react";
 
 import { useChatsStore } from "~/app/stores/chatsStore";
 import { api } from "~/trpc/react";
-import ChatInterface from "~/app/_components/chatInterface";
+import ChatInterface from "~/app/chat/_components/chatInterface";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
-import { Loader2 } from "lucide-react";
+import { Loader, Loader2 } from "lucide-react";
 
 export default function ChatPage() {
   const { id } = useParams();
@@ -50,11 +50,5 @@ export default function ChatPage() {
     }
   }, [id]);
 
-  return storedChat ? (
-    <ChatInterface id={id as string} initialMessages={storedChat.messages} />
-  ) : (
-    <div className="flex flex-col place-items-center justify-center h-full pb-20">
-      <Loader2 className="h-10 w-10 animate-spin text-muted-foreground" />
-    </div>
-  );
+  return storedChat ? <ChatInterface id={id as string} initialMessages={storedChat.messages} /> : <Loader />;
 }

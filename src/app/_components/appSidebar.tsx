@@ -20,7 +20,8 @@ import { api } from "~/trpc/react";
 import { toast } from "sonner";
 import { useUser } from "@clerk/nextjs";
 import { Input } from "./ui/input";
-import { ThemeButton } from "./themeButton";
+
+import Link from "next/link";
 
 export function AppSidebar() {
   const user = useUser();
@@ -270,15 +271,21 @@ function CustomSidebar({ userId }: { userId: string }) {
       </SidebarContent>
       <SidebarFooter className="pt-4 pb-6">
         <div className="flex flex-col gap-1">
-          <Button variant="ghost" className="justify-start" size="lg" key="files-button">
-            <File className="stroke-muted-foreground" /> Files
-          </Button>
-          <Button variant="ghost" className="justify-start" size="lg" key="memories-button">
-            <Story className="stroke-muted-foreground" /> Memories
-          </Button>
-          <Button variant="ghost" className="justify-start" size="lg" key="models-button">
-            <Thorchain className="stroke-muted-foreground" /> Models
-          </Button>
+          <Link href="/files">
+            <Button variant="ghost" className="justify-start w-full" size="lg" key="files-button">
+              <File className="stroke-muted-foreground" /> Files
+            </Button>
+          </Link>
+          <Link href="/memories">
+            <Button variant="ghost" className="justify-start w-full" size="lg" key="memories-button">
+              <Story className="stroke-muted-foreground" /> Memories
+            </Button>
+          </Link>
+          <Link href="/models">
+            <Button variant="ghost" className="justify-start w-full" size="lg" key="models-button">
+              <Thorchain className="stroke-muted-foreground" /> Models
+            </Button>
+          </Link>
         </div>
       </SidebarFooter>
     </Sidebar>

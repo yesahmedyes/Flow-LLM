@@ -4,54 +4,65 @@ import { ThemeProvider as NextThemesProvider, useTheme } from "next-themes";
 import { TRPCReactProvider } from "~/trpc/react";
 import { useUser } from "@clerk/nextjs";
 import { useModelsStore } from "~/app/stores/modelsStore";
+import { useQuery } from "@tanstack/react-query";
 import { useEffect } from "react";
 
 export default function Provider({ children }: { children: React.ReactNode }) {
-  const { theme, setTheme } = useTheme();
+  return (
+    <TRPCReactProvider>
+      <PreferencesProvider>
+        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
+          {children}
+        </ThemeProvider>
+      </PreferencesProvider>
+    </TRPCReactProvider>
+  );
+}
 
+function PreferencesProvider({ children }: { children: React.ReactNode }) {
+  const { theme, setTheme } = useTheme();
   const { user } = useUser();
   const { preferredModels, setPreferredModels } = useModelsStore();
 
-  const fetchModels = async () => {
-    if (user?.id && preferredModels.length === 0) {
+  // Query for models
+  const { data: modelsData } = useQuery({
+    queryKey: ["preferredModels", user?.id],
+    queryFn: async () => {
       const res = await fetch("/api/prefs/models");
 
-      if (res.ok) {
-        const models = (await res.json()) as string[] | null;
+      if (!res.ok) throw new Error("Failed to fetch models");
 
-        if (models) {
-          setPreferredModels(models);
-        }
-      }
-    }
-  };
+      return res.json() as Promise<string[] | null>;
+    },
+    enabled: !!user?.id && preferredModels.length === 0,
+  });
 
-  const fetchTheme = async () => {
-    if (user?.id && !theme) {
+  // Query for theme
+  const { data: themeData } = useQuery({
+    queryKey: ["preferredTheme", user?.id],
+    queryFn: async () => {
       const res = await fetch("/api/prefs/theme");
 
-      if (res.ok) {
-        const theme = (await res.json()) as string | null;
+      if (!res.ok) throw new Error("Failed to fetch theme");
 
-        if (theme && ["light", "dark"].includes(theme)) {
-          setTheme(theme);
-        }
-      }
-    }
-  };
+      return res.json() as Promise<string | null>;
+    },
+    enabled: !!user?.id && !theme,
+  });
 
   useEffect(() => {
-    void fetchModels();
-    void fetchTheme();
-  }, [user]);
+    if (modelsData) {
+      setPreferredModels(modelsData);
+    }
+  }, [modelsData, setPreferredModels]);
 
-  return (
-    <TRPCReactProvider>
-      <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
-        {children}
-      </ThemeProvider>
-    </TRPCReactProvider>
-  );
+  useEffect(() => {
+    if (themeData && ["light", "dark"].includes(themeData)) {
+      setTheme(themeData);
+    }
+  }, [themeData, setTheme]);
+
+  return children;
 }
 
 function ThemeProvider({ children, ...props }: React.ComponentProps<typeof NextThemesProvider>) {

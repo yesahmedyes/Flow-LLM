@@ -1,8 +1,8 @@
 import { DocumentText, Image, ArrowRight, Stop } from "iconsax-react";
 
 import { Add } from "iconsax-react";
-import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
-import { Textarea } from "./ui/textarea";
+import { Popover, PopoverContent, PopoverTrigger } from "../../_components/ui/popover";
+import { Textarea } from "../../_components/ui/textarea";
 import { useState } from "react";
 
 interface ChatBoxProps {
@@ -31,7 +31,7 @@ export default function ChatBox({ messagesPresent, onSubmit, stop, isLoading }: 
 
   return (
     <div
-      className={`fixed flex flex-col items-center w-full bg-background ${messagesPresent ? "bottom-0" : "bottom-1/2 -mb-6"}`}
+      className={`fixed flex flex-col items-center w-full bg-background ${messagesPresent ? "bottom-0" : "bottom-1/2 -mb-10"}`}
     >
       {!messagesPresent && <div className="mb-12 text-2xl font-semibold text-white">What can I help you with?</div>}
 

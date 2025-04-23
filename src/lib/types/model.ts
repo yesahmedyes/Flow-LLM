@@ -1,19 +1,21 @@
-export interface Message {
-  role: "system" | "user" | "assistant";
-  content: string;
-}
-
-export interface Model {
+export type Model = {
   id: string;
   name: string;
-  description?: string;
+  description: string;
   context_length: number;
-  pricing: {
-    prompt: number;
-    completion: number;
+  architecture: {
+    modality: string;
+    input_modalities: string[];
+    output_modalities: string[];
+    tokenizer: string;
+    instruct_type: string;
   };
-}
-
-export interface ModelsResponse {
-  data: Model[];
-}
+  pricing: {
+    prompt: string;
+    completion: string;
+    request: string;
+    image: string;
+    web_search: string;
+    internal_reasoning: string;
+  };
+};
