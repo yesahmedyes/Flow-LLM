@@ -1,4 +1,3 @@
-/* eslint-disable @next/next/no-img-element */
 "use client";
 
 import { useEffect, useMemo, useRef } from "react";
@@ -7,6 +6,7 @@ import { type FileData, useFilesStore } from "../stores/filesStore";
 import UploadFileSection from "./_components/uploadFileSection";
 import { api } from "~/trpc/react";
 import Loader from "../_components/loader";
+import FileCard from "./_components/fileCard";
 
 export default function Page() {
   const user = useUser();
@@ -95,36 +95,7 @@ export default function Page() {
                 <h3 className="text-sm mb-4">{date}</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                   {dateFiles.map((file) => (
-                    <div key={file.id} className="border rounded-lg p-4 flex flex-col">
-                      <div className="flex items-center mb-2">
-                        <FileIcon type={file.fileType} />
-                        <span className="ml-2 truncate">{file.fileName}</span>
-                      </div>
-
-                      {file.fileType.startsWith("image/") ? (
-                        <div className="h-32 w-full overflow-hidden rounded-md mb-2">
-                          <img src={file.fileUrl} alt={file.fileName} className="h-full w-full object-cover" />
-                        </div>
-                      ) : null}
-
-                      <div className="mt-auto pt-2 flex justify-between">
-                        <a
-                          href={file.fileUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-sm text-primary hover:underline"
-                        >
-                          View
-                        </a>
-                        <a
-                          href={file.fileUrl}
-                          download={file.fileName}
-                          className="text-sm text-primary hover:underline"
-                        >
-                          Download
-                        </a>
-                      </div>
-                    </div>
+                    <FileCard key={file.id} file={file} />
                   ))}
                 </div>
               </div>
@@ -141,18 +112,4 @@ export default function Page() {
       </div>
     </div>
   );
-}
-
-function FileIcon({ type }: { type: string }) {
-  let icon = "";
-
-  if (type.includes("image")) {
-    icon = "🏞️";
-  } else if (type.includes("text")) {
-    icon = "📄";
-  } else if (type.includes("pdf")) {
-    icon = "📕";
-  }
-
-  return <span className="text-xl">{icon}</span>;
 }

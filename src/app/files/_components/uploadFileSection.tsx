@@ -35,14 +35,14 @@ export default function UploadFileSection() {
   };
 
   return (
-    <div className="w-full mt-2 mb-10">
+    <div className="w-full mt-1.5 mb-10">
       <h2 className="text-xl font-semibold mb-4">Upload Files</h2>
       <UploadDropzone
         endpoint="imageUploader"
         onClientUploadComplete={handleUploadComplete}
         className="rounded-xl p-8 w-full border border-dashed"
         appearance={{
-          container: "cursor-pointer",
+          container: "cursor-pointer bg-background",
           uploadIcon: "text-muted-foreground",
           label: "text-muted-foreground pt-4",
           allowedContent: "text-muted-foreground pt-2 pb-6",
