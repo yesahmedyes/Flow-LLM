@@ -57,7 +57,7 @@ export default function AuthPage() {
     <div className="flex flex-1 flex-col md:flex-row h-screen">
       {/* Left side with prompt area */}
       <div className="flex flex-1 flex-col justify-center p-8 bg-[#0f0a1f]">
-        <h1 className="absolute top-0 left-0 px-8 py-6 text-2xl place-self-start font-bold text-purple-400">FlowGPT</h1>
+        <h1 className="absolute top-0 left-0 px-8 py-6 text-2xl place-self-start font-bold text-purple-400">FlowLLM</h1>
 
         <div className="w-full pb-16 text-center">
           <h2 className="text-xl font-bold text-purple-400 mb-4">{displayText}</h2>

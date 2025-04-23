@@ -6,7 +6,7 @@ export type Chat = typeof chats.$inferSelect;
 
 interface ChatsStore {
   chats: Chat[];
-  setChats: (chats: Chat[]) => void;
+  addChats: (chats: Chat[]) => void;
   getChatById: (chatId: string) => Chat | null;
   addChat: (chat: Chat) => void;
   updateChatById: (chatId: string, messages: Message[], userId: string) => void;
@@ -16,13 +16,31 @@ interface ChatsStore {
 
 export const useChatsStore = create<ChatsStore>((set) => ({
   chats: [],
-  setChats: (chats) => set({ chats }),
+  addChats: (chats) =>
+    set((state) => {
+      const existingChatIds = new Set(state.chats.map((chat) => chat.id));
+
+      const newChats = chats.filter((chat) => !existingChatIds.has(chat.id));
+
+      return { chats: [...state.chats, ...newChats] };
+    }),
   getChatById: (chatId: string): Chat | null => {
     const { chats } = useChatsStore.getState();
 
     return chats.find((chat) => chat.id === chatId) ?? null;
   },
-  addChat: (chat) => set((state) => ({ chats: [...state.chats, chat] })),
+  addChat: (chat) =>
+    set((state) => {
+      const chatExists = state.chats.some((c) => c.id === chat.id);
+
+      if (chatExists) {
+        return {
+          chats: state.chats.map((c) => (c.id === chat.id ? { ...c, ...chat } : c)),
+        };
+      }
+
+      return { chats: [...state.chats, chat] };
+    }),
   updateChatById: (chatId: string, messages: Message[], userId: string) => {
     set((state) => {
       const chatExists = state.chats.some((c) => c.id === chatId);

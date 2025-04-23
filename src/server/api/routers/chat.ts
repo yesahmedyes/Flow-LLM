@@ -20,33 +20,16 @@ export const chatRouter = createTRPCRouter({
 
     return chat;
   }),
-  fetchInitialChats: protectedProcedure.query(async ({ ctx }) => {
-    const { user } = ctx;
-
-    const chatsList = await db.query.chats.findMany({
-      where: eq(chats.userId, user.id),
-      orderBy: [desc(chats.updatedAt)],
-      limit: 5,
-      offset: 0,
-    });
-
-    const nextCursor = 5;
-    const hasMore = chatsList.length === 5;
-
-    return {
-      items: chatsList,
-      nextCursor: hasMore ? nextCursor : null,
-    };
-  }),
-  fetchMoreChats: protectedProcedure
+  getChats: protectedProcedure
     .input(
       z.object({
         limit: z.number().min(1).default(10),
         cursor: z.number().default(0),
       }),
     )
-    .mutation(async ({ ctx, input }) => {
+    .query(async ({ ctx, input }) => {
       const { limit, cursor } = input;
+
       const { user } = ctx;
 
       const chatsList = await db.query.chats.findMany({
@@ -56,7 +39,7 @@ export const chatRouter = createTRPCRouter({
         offset: cursor,
       });
 
-      const nextCursor = cursor + chatsList.length;
+      const nextCursor = (cursor ?? 0) + chatsList.length;
       const hasMore = chatsList.length === limit;
 
       return {

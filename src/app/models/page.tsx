@@ -3,14 +3,13 @@
 import { useEffect, useMemo, useState } from "react";
 import { useModelsStore } from "../stores/modelsStore";
 import type { Model } from "~/lib/types/model";
-import { ScrollArea } from "../_components/ui/scroll-area";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "../_components/ui/sheet";
 import { Input } from "../_components/ui/input";
 import { Separator } from "../_components/ui/separator";
-import Loader from "../_components/loader";
 import { Badge } from "../_components/ui/badge";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "../_components/ui/card";
 import { Heart } from "iconsax-react";
+import CustomLoader from "../_components/customLoader";
 
 export default function ModelsPage() {
   const { allModels, setAllModels, preferredModels, setPreferredModels } = useModelsStore();
@@ -191,6 +190,6 @@ export default function ModelsPage() {
       </Sheet>
     </div>
   ) : (
-    <Loader />
+    <CustomLoader />
   );
 }

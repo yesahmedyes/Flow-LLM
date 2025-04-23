@@ -8,7 +8,7 @@ import { api } from "~/trpc/react";
 import ChatInterface from "~/app/chat/_components/chatInterface";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
-import { Loader, Loader2 } from "lucide-react";
+import CustomLoader from "~/app/_components/customLoader";
 
 export default function ChatPage() {
   const { id } = useParams();
@@ -50,5 +50,5 @@ export default function ChatPage() {
     }
   }, [id]);
 
-  return storedChat ? <ChatInterface id={id as string} initialMessages={storedChat.messages} /> : <Loader />;
+  return storedChat ? <ChatInterface id={id as string} initialMessages={storedChat.messages} /> : <CustomLoader />;
 }

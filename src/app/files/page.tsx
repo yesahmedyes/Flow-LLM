@@ -5,8 +5,9 @@ import { useUser } from "@clerk/nextjs";
 import { type FileData, useFilesStore } from "../stores/filesStore";
 import UploadFileSection from "./_components/uploadFileSection";
 import { api } from "~/trpc/react";
-import Loader from "../_components/loader";
 import FileCard from "./_components/fileCard";
+import CustomLoader from "../_components/customLoader";
+import { ScrollArea } from "../_components/ui/scroll-area";
 
 export default function Page() {
   const user = useUser();
@@ -81,35 +82,37 @@ export default function Page() {
 
   return (
     <div className="flex max-w-4xl mx-auto flex-col items-center py-20">
-      {/* Upload Section */}
-      <UploadFileSection />
+      <ScrollArea className="w-full">
+        {/* Upload Section */}
+        <UploadFileSection />
 
-      {/* Files Display Section */}
-      <div className="w-full">
-        <h2 className="text-xl font-semibold mb-5">Your Files</h2>
+        {/* Files Display Section */}
+        <div className="w-full">
+          <h2 className="text-xl font-semibold mb-5">Your Files</h2>
 
-        {contentLoaded ? (
-          <>
-            {groupedFiles.map(([date, dateFiles]) => (
-              <div key={date} className="mb-6">
-                <h3 className="text-sm mb-4">{date}</h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                  {dateFiles.map((file) => (
-                    <FileCard key={file.id} file={file} />
-                  ))}
+          {contentLoaded ? (
+            <>
+              {groupedFiles.map(([date, dateFiles]) => (
+                <div key={date} className="mb-6">
+                  <h3 className="text-sm mb-4">{date}</h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                    {dateFiles.map((file) => (
+                      <FileCard key={file.id} file={file} />
+                    ))}
+                  </div>
                 </div>
-              </div>
-            ))}
-            {hasNextPage && (
-              <div ref={sentinelRef}>
-                <Loader className="pt-12" />
-              </div>
-            )}
-          </>
-        ) : (
-          <Loader className="pt-8" />
-        )}
-      </div>
+              ))}
+              {hasNextPage && (
+                <div ref={sentinelRef}>
+                  <CustomLoader className="pt-12" />
+                </div>
+              )}
+            </>
+          ) : (
+            <CustomLoader className="pt-8" />
+          )}
+        </div>
+      </ScrollArea>
     </div>
   );
 }

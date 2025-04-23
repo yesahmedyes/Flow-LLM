@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useChat } from "@ai-sdk/react";
 import ChatBox from "./chatBox";
 import FullChat from "./fullChat";
@@ -18,6 +18,9 @@ export default function ChatInterface({ id, initialMessages }: ChatInterfaceProp
   const { user } = useUser();
 
   const { selectedModel } = useModelsStore();
+
+  // Keep track of initial message count to avoid updating timestamp when just viewing
+  const initialMessageCount = useRef(initialMessages.length);
 
   const { messages, status, stop, append } = useChat({
     id: id as string,
@@ -45,12 +48,18 @@ export default function ChatInterface({ id, initialMessages }: ChatInterfaceProp
   };
 
   const updateChatById = useChatsStore((state) => state.updateChatById);
+  const updateChatName = useChatsStore((state) => state.updateChatName);
 
   useEffect(() => {
-    if (messages.length > 0) {
+    // Only update the chat if messages have actually changed (new messages added)
+    if (messages.length > 0 && messages.length !== initialMessageCount.current) {
       updateChatById(id as string, messages as Message[], user!.id as string);
     }
-  }, [messages]);
+
+    if (messages.length === 1 && initialMessageCount.current === 0) {
+      updateChatName(id as string, messages[0]!.content as string);
+    }
+  }, [messages, id, updateChatById, updateChatName, user]);
 
   return (
     <div className="flex w-full mx-auto flex-col items-center">

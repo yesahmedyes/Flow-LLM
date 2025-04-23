@@ -14,7 +14,7 @@ import { NextSSRPlugin } from "@uploadthing/react/next-ssr-plugin";
 import { ourFileRouter } from "~/app/api/uploadthing/core";
 
 export const metadata: Metadata = {
-  title: "FlowGPT",
+  title: "FlowLLM",
   description: "A chatbot for all your needs",
   icons: [{ rel: "icon", url: "/favicon.ico" }],
 };
@@ -31,15 +31,28 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <ClerkProvider>
           <NextSSRPlugin routerConfig={extractRouterConfig(ourFileRouter)} />
           <Provider>
-            <SidebarProvider defaultOpen={false}>
-              <AppSidebar />
+            {/* Mobile version not available message */}
+            <div className="xl:hidden flex items-center justify-center h-screen w-full bg-gradient-to-b from-gray-50 to-gray-100 p-6 text-center">
+              <div className="max-w-sm">
+                <h2 className="text-neutral-800 font-bold mb-3">Mobile Version Coming Soon!</h2>
+                <p className="text-neutral-600 text-sm mb-2 leading-loose">
+                  For the best experience, please access this application on a desktop device.
+                </p>
+              </div>
+            </div>
 
-              <main className="w-full h-screen">
-                <TopBar />
+            {/* Desktop version */}
+            <div className="hidden xl:block h-full w-full">
+              <SidebarProvider defaultOpen={false}>
+                <AppSidebar />
 
-                {children}
-              </main>
-            </SidebarProvider>
+                <main className="w-full h-screen">
+                  <TopBar />
+
+                  {children}
+                </main>
+              </SidebarProvider>
+            </div>
           </Provider>
 
           <Toaster />
