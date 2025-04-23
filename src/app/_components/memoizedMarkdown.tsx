@@ -40,6 +40,8 @@ function CodeBlock({ codeString, language }: { codeString: string; language: str
 }
 
 function MarkdownBlock({ content }: { content: string }) {
+  // TODO: Add support for latex equations
+
   return (
     <ReactMarkdown
       remarkPlugins={[remarkGfm]}

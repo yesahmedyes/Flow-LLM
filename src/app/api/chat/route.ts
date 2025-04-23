@@ -1,6 +1,6 @@
 import openai from "~/server/openai/init";
 import { appendResponseMessages, streamText, type Message } from "ai";
-import { saveChat } from "~/lib/helpers/saveChat";
+import { saveChat } from "~/lib/helpers/saveToDb";
 import { auth } from "@clerk/nextjs/server";
 
 export const maxDuration = 60;

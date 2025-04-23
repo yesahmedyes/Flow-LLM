@@ -5,12 +5,13 @@ import { Geist } from "next/font/google";
 import { Toaster } from "sonner";
 
 import Provider from "./provider";
-import { SidebarProvider, SidebarTrigger } from "./_components/ui/sidebar";
+import { SidebarProvider } from "./_components/ui/sidebar";
 import { AppSidebar } from "./_components/appSidebar";
-import { ClerkProvider, SignedIn, UserButton } from "@clerk/nextjs";
-import { ThemeButton } from "./_components/themeButton";
-import ModelSelect from "./_components/modelSelect";
+import { ClerkProvider } from "@clerk/nextjs";
 import TopBar from "./_components/topBar";
+import { extractRouterConfig } from "uploadthing/server";
+import { NextSSRPlugin } from "@uploadthing/react/next-ssr-plugin";
+import { ourFileRouter } from "~/app/api/uploadthing/core";
 
 export const metadata: Metadata = {
   title: "FlowGPT",
@@ -28,6 +29,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
     <html lang="en" className={`${geist.variable} tracking-wide leading-loose`} suppressHydrationWarning>
       <body>
         <ClerkProvider>
+          <NextSSRPlugin routerConfig={extractRouterConfig(ourFileRouter)} />
           <Provider>
             <SidebarProvider defaultOpen={false}>
               <AppSidebar />

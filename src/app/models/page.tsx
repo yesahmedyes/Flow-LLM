@@ -82,7 +82,7 @@ export default function ModelsPage() {
 
   return allModels.length > 0 ? (
     <div className="w-full h-screen overflow-y-auto">
-      <div className="max-w-9/12 mx-auto py-8">
+      <div className="max-w-9/12 mx-auto py-20">
         <Input
           className="mb-5 h-11"
           type="search"

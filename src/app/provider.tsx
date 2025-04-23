@@ -6,6 +6,9 @@ import { useUser } from "@clerk/nextjs";
 import { useModelsStore } from "~/app/stores/modelsStore";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect } from "react";
+import { extractRouterConfig } from "uploadthing/server";
+import { NextSSRPlugin } from "@uploadthing/react/next-ssr-plugin";
+import { ourFileRouter } from "~/app/api/uploadthing/core";
 
 export default function Provider({ children }: { children: React.ReactNode }) {
   return (

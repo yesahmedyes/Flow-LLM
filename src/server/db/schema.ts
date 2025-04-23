@@ -22,5 +22,27 @@ export const chats = createTable(
       .default(sql`(unixepoch())`)
       .notNull(),
   }),
-  (t) => [index("id_idx").on(t.id), index("updated_at_idx").on(t.updatedAt)],
+  (t) => [index("chat_id_idx").on(t.id), index("chat_updated_at_idx").on(t.updatedAt)],
+);
+
+export const files = createTable(
+  "file",
+  (file) => ({
+    id: file
+      .text({ length: 256 })
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    userId: text({ length: 256 }).notNull(),
+    fileUrl: text({ length: 256 }).notNull(),
+    fileName: text({ length: 256 }).notNull(),
+    fileType: text({ length: 256 }).notNull(),
+    createdAt: integer({ mode: "timestamp" })
+      .default(sql`(unixepoch())`)
+      .notNull(),
+    updatedAt: integer({ mode: "timestamp" })
+      .$onUpdate(() => new Date())
+      .default(sql`(unixepoch())`)
+      .notNull(),
+  }),
+  (t) => [index("file_id_idx").on(t.id), index("file_updated_at_idx").on(t.updatedAt)],
 );

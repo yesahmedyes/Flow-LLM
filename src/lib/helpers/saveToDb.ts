@@ -1,6 +1,7 @@
 import type { Message } from "ai";
 import { db } from "~/server/db";
-import { chats } from "~/server/db/schema";
+import { chats, files } from "~/server/db/schema";
+import type { FileData } from "~/app/stores/filesStore";
 
 export async function saveChat(data: { id: string; messages: Message[]; userId: string }) {
   await db
@@ -16,4 +17,10 @@ export async function saveChat(data: { id: string; messages: Message[]; userId: 
       set: { messages: data.messages },
     })
     .returning();
+}
+
+export async function saveFile(data: { fileUrl: string; fileName: string; fileType: string; userId: string }) {
+  const res = await db.insert(files).values(data).returning();
+
+  return res as FileData[];
 }
