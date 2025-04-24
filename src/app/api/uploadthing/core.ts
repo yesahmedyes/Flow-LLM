@@ -1,6 +1,7 @@
 import { auth } from "@clerk/nextjs/server";
 import { createUploadthing, type FileRouter } from "uploadthing/next";
 import { UploadThingError } from "uploadthing/server";
+import { env } from "~/env";
 import { saveFile } from "~/lib/helpers/saveToDb";
 
 const f = createUploadthing();
@@ -42,7 +43,7 @@ export const ourFileRouter = {
         userId,
       });
 
-      return {
+      const obj = {
         userId: userId,
         fileUrl: file.ufsUrl,
         fileName: file.name,
@@ -51,6 +52,8 @@ export const ourFileRouter = {
         createdAt: res[0]!.createdAt.toISOString(),
         updatedAt: res[0]!.updatedAt.toISOString(),
       };
+
+      return obj;
     }),
 } satisfies FileRouter;
 

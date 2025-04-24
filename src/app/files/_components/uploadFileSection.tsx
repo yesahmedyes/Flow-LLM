@@ -2,6 +2,7 @@ import { UploadDropzone } from "~/lib/helpers/uploadThing";
 import { useFilesStore } from "~/app/stores/filesStore";
 import type { ClientUploadedFileData } from "uploadthing/types";
 import { type FileData } from "~/app/stores/filesStore";
+import { useMutation } from "@tanstack/react-query";
 
 type UploadFileResponse = ClientUploadedFileData<{
   userId: string;
@@ -14,24 +15,27 @@ type UploadFileResponse = ClientUploadedFileData<{
 }>;
 
 export default function UploadFileSection() {
-  const { addFile } = useFilesStore();
+  const { addFiles } = useFilesStore();
+
+  const createEmbeddingsMutation = useMutation({
+    mutationFn: async (obj: UploadFileResponse[]) => {
+      const res = await fetch("/api/bg/createEmbeddings", {
+        method: "POST",
+        body: JSON.stringify(obj.map((file) => file.serverData)),
+      });
+    },
+  });
 
   const handleUploadComplete = (res: UploadFileResponse[]) => {
-    res.forEach((file) => {
-      const { userId, fileUrl, fileName, fileType, id, createdAt, updatedAt } = file.serverData;
+    createEmbeddingsMutation.mutate(res);
 
-      const newFile = {
-        id,
-        userId,
-        fileUrl,
-        fileName,
-        fileType,
-        createdAt: new Date(createdAt),
-        updatedAt: new Date(updatedAt),
-      } as FileData;
-
-      addFile(newFile);
-    });
+    addFiles(
+      res.map((file) => ({
+        ...file.serverData,
+        createdAt: new Date(file.serverData.createdAt),
+        updatedAt: new Date(file.serverData.updatedAt),
+      })),
+    );
   };
 
   return (

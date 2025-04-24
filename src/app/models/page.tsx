@@ -10,6 +10,7 @@ import { Badge } from "../_components/ui/badge";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "../_components/ui/card";
 import { Heart } from "iconsax-react";
 import CustomLoader from "../_components/customLoader";
+import { api } from "~/trpc/react";
 
 export default function ModelsPage() {
   const { allModels, setAllModels, preferredModels, setPreferredModels } = useModelsStore();
@@ -20,17 +21,17 @@ export default function ModelsPage() {
 
   const [isOpen, setIsOpen] = useState(false);
 
+  const { data: models } = api.models.getModels.useQuery(undefined, {
+    enabled: allModels.length === 0,
+  });
+
+  const { mutate: savePreferredModelsMutation } = api.prefs.setPreferredModels.useMutation();
+
   useEffect(() => {
-    if (allModels.length > 0) return;
-
-    const fetchModels = async () => {
-      const response = await fetch("/api/models");
-      const data = (await response.json()) as Model[];
-      setAllModels(data);
-    };
-
-    void fetchModels();
-  }, []);
+    if (models) {
+      setAllModels(models);
+    }
+  }, [models]);
 
   const filteredModels = useMemo(
     () => allModels.filter((model) => model.name.toLowerCase().includes(searchQuery.toLowerCase())),
@@ -56,26 +57,12 @@ export default function ModelsPage() {
       const updatedModels = preferredModels.filter((model) => model !== modelId);
 
       setPreferredModels(updatedModels);
-      void savePreferredModels(updatedModels);
+      savePreferredModelsMutation({ models: updatedModels });
     } else {
       const updatedModels = [...preferredModels, modelId];
 
       setPreferredModels(updatedModels);
-      void savePreferredModels(updatedModels);
-    }
-  };
-
-  const savePreferredModels = async (models: string[]) => {
-    try {
-      await fetch("/api/prefs/models", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ models }),
-      });
-    } catch (error) {
-      console.error("Failed to save preferred models:", error);
+      savePreferredModelsMutation({ models: updatedModels });
     }
   };
 

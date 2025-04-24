@@ -4,11 +4,8 @@ import { ThemeProvider as NextThemesProvider, useTheme } from "next-themes";
 import { TRPCReactProvider } from "~/trpc/react";
 import { useUser } from "@clerk/nextjs";
 import { useModelsStore } from "~/app/stores/modelsStore";
-import { useQuery } from "@tanstack/react-query";
 import { useEffect } from "react";
-import { extractRouterConfig } from "uploadthing/server";
-import { NextSSRPlugin } from "@uploadthing/react/next-ssr-plugin";
-import { ourFileRouter } from "~/app/api/uploadthing/core";
+import { api } from "~/trpc/react";
 
 export default function Provider({ children }: { children: React.ReactNode }) {
   return (
@@ -27,29 +24,13 @@ function PreferencesProvider({ children }: { children: React.ReactNode }) {
   const { user } = useUser();
   const { preferredModels, setPreferredModels } = useModelsStore();
 
-  // Query for models
-  const { data: modelsData } = useQuery({
-    queryKey: ["preferredModels", user?.id],
-    queryFn: async () => {
-      const res = await fetch("/api/prefs/models");
-
-      if (!res.ok) throw new Error("Failed to fetch models");
-
-      return res.json() as Promise<string[] | null>;
-    },
+  // Query for models using tRPC
+  const { data: modelsData } = api.prefs.getPreferredModels.useQuery(undefined, {
     enabled: !!user?.id && preferredModels.length === 0,
   });
 
-  // Query for theme
-  const { data: themeData } = useQuery({
-    queryKey: ["preferredTheme", user?.id],
-    queryFn: async () => {
-      const res = await fetch("/api/prefs/theme");
-
-      if (!res.ok) throw new Error("Failed to fetch theme");
-
-      return res.json() as Promise<string | null>;
-    },
+  // Query for theme using tRPC
+  const { data: themeData } = api.prefs.getTheme.useQuery(undefined, {
     enabled: !!user?.id && !theme,
   });
 

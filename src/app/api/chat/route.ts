@@ -1,4 +1,4 @@
-import openai from "~/server/openai/init";
+import openai from "~/server/init/openai";
 import { appendResponseMessages, streamText, type Message } from "ai";
 import { saveChat } from "~/lib/helpers/saveToDb";
 import { auth } from "@clerk/nextjs/server";
