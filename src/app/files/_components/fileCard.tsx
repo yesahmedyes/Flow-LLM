@@ -8,11 +8,9 @@ import { useFilesStore } from "~/app/stores/filesStore";
 import { useDeleteDialog } from "~/app/_components/deleteDialog";
 import { useEditDialog } from "~/app/_components/editDialog";
 import { toast } from "sonner";
+import { useMutation } from "@tanstack/react-query";
 
 export default function FileCard({ file }: { file: FileData }) {
-  // BUG: When a file is deleted, infinite query skips a file on next page.
-  // TODO: Fix this.
-
   const { DeleteDialogComponent, setOpen: setDeleteDialogOpen } = useDeleteDialog();
   const { EditDialogComponent, setOpen: setEditDialogOpen } = useEditDialog();
 
@@ -54,10 +52,25 @@ export default function FileCard({ file }: { file: FileData }) {
     }
   };
 
+  const createEmbeddingsMutation = useMutation({
+    mutationFn: async (obj: FileData[]) => {
+      const res = await fetch("/api/bg/createEmbeddings", {
+        method: "POST",
+        body: JSON.stringify(
+          obj.map((file) => ({
+            fileUrl: file.fileUrl,
+            fileType: file.fileType,
+            id: file.id,
+          })),
+        ),
+      });
+    },
+  });
+
   return (
     <div
       onClick={() => {
-        toast.success("File clicked");
+        createEmbeddingsMutation.mutate([file]);
       }}
       key={file.id}
       className="border rounded-lg p-4 flex flex-col"

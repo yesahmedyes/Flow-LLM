@@ -13,9 +13,6 @@ interface ChatBoxProps {
 }
 
 export default function ChatBox({ messagesPresent, onSubmit, stop, isLoading }: ChatBoxProps) {
-  // TODO: Option to extend chat box to full height
-  // TODO: Make the stop button softer (transition on hover)
-
   const [agentSelected, setAgentSelected] = useState<string | null>(null);
 
   const [message, setMessage] = useState("");

@@ -3,6 +3,7 @@ import { drizzle } from "drizzle-orm/libsql";
 
 import { env } from "~/env";
 import * as schema from "./schema";
+import { sql } from "drizzle-orm/sql";
 
 /**
  * Cache the database connection in development. This avoids creating a new connection on every HMR
@@ -16,3 +17,8 @@ export const client = globalForDb.client ?? createClient({ url: env.DATABASE_URL
 if (env.NODE_ENV !== "production") globalForDb.client = client;
 
 export const db = drizzle(client, { schema });
+
+// await db.run(sql`
+//   CREATE INDEX IF NOT EXISTS vector_index
+//   ON flowgpt_file(embeddings vector_cosine(1536))
+// `);

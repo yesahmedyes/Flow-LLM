@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX `chat_id_userId_idx` ON `flowgpt_chat` (`id`,`userId`);

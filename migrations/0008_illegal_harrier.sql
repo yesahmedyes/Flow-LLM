@@ -1,0 +1,1 @@
+DROP INDEX `file_embeddings_idx`;

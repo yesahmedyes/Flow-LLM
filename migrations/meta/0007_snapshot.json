@@ -1,0 +1,178 @@
+{
+  "version": "6",
+  "dialect": "sqlite",
+  "id": "cb7bfaa7-b883-426f-9604-098f52fd648a",
+  "prevId": "318faa7c-42aa-4ef8-823e-5b1b23a2127f",
+  "tables": {
+    "flowgpt_chat": {
+      "name": "flowgpt_chat",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text(256)",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "userId": {
+          "name": "userId",
+          "type": "text(256)",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "name": {
+          "name": "name",
+          "type": "text(256)",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'New Chat'"
+        },
+        "messages": {
+          "name": "messages",
+          "type": "blob",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "createdAt": {
+          "name": "createdAt",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "(unixepoch())"
+        },
+        "updatedAt": {
+          "name": "updatedAt",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "(unixepoch())"
+        }
+      },
+      "indexes": {
+        "chat_id_idx": {
+          "name": "chat_id_idx",
+          "columns": [
+            "id"
+          ],
+          "isUnique": false
+        },
+        "chat_updated_at_idx": {
+          "name": "chat_updated_at_idx",
+          "columns": [
+            "updatedAt"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "flowgpt_file": {
+      "name": "flowgpt_file",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text(256)",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "userId": {
+          "name": "userId",
+          "type": "text(256)",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "fileUrl": {
+          "name": "fileUrl",
+          "type": "text(256)",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "fileName": {
+          "name": "fileName",
+          "type": "text(256)",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "fileType": {
+          "name": "fileType",
+          "type": "text(256)",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "embeddings": {
+          "name": "embeddings",
+          "type": "F32_BLOB(1536)",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "createdAt": {
+          "name": "createdAt",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "(unixepoch())"
+        },
+        "updatedAt": {
+          "name": "updatedAt",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "(unixepoch())"
+        }
+      },
+      "indexes": {
+        "file_id_idx": {
+          "name": "file_id_idx",
+          "columns": [
+            "id"
+          ],
+          "isUnique": false
+        },
+        "file_updated_at_idx": {
+          "name": "file_updated_at_idx",
+          "columns": [
+            "updatedAt"
+          ],
+          "isUnique": false
+        },
+        "file_embeddings_idx": {
+          "name": "file_embeddings_idx",
+          "columns": [
+            "embeddings"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    }
+  },
+  "views": {},
+  "enums": {},
+  "_meta": {
+    "schemas": {},
+    "tables": {},
+    "columns": {}
+  },
+  "internal": {
+    "indexes": {}
+  }
+}

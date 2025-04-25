@@ -9,8 +9,6 @@ import { ThemeButton } from "./themeButton";
 import { usePathname } from "next/navigation";
 
 export default function TopBar() {
-  // TODO: On Page Load, show top bar more smoothly
-
   const pathname = usePathname();
 
   return (

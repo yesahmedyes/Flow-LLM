@@ -9,10 +9,6 @@ interface FullChatProps {
 }
 
 export default function FullChat({ messages, isLoading }: FullChatProps) {
-  // TODO: Show Image and File Attachments
-  // TODO: Show reasoning, sources, and errors
-  // TODO: Edit last sent message and resend
-  // TODO: Ability to scroll up while message is streaming
 
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const prevMessagesLengthRef = useRef<number>(0);

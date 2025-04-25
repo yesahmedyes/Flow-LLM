@@ -61,7 +61,10 @@ function CustomSidebar({ userId }: { userId: string }) {
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (sidebarRef.current && !sidebarRef.current.contains(event.target as Node)) {
+      // Check if the click was on the trigger button
+      const isTriggerClick = (event.target as Element).closest('[data-sidebar="trigger"]');
+
+      if (sidebarRef.current && !sidebarRef.current.contains(event.target as Node) && !isTriggerClick) {
         handleSidebarClose();
       }
     };

@@ -1,7 +1,6 @@
 import { auth } from "@clerk/nextjs/server";
 import { createUploadthing, type FileRouter } from "uploadthing/next";
 import { UploadThingError } from "uploadthing/server";
-import { env } from "~/env";
 import { saveFile } from "~/lib/helpers/saveToDb";
 
 const f = createUploadthing();
