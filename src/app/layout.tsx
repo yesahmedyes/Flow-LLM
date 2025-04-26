@@ -32,7 +32,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
           <NextSSRPlugin routerConfig={extractRouterConfig(ourFileRouter)} />
           <Provider>
             {/* Mobile version not available message */}
-            <div className="xl:hidden flex items-center justify-center h-screen w-full bg-gradient-to-b from-gray-50 to-gray-100 p-6 text-center">
+            <div className="lg:hidden flex items-center justify-center h-screen w-full bg-gradient-to-b from-gray-50 to-gray-100 p-6 text-center">
               <div className="max-w-sm">
                 <h2 className="text-neutral-800 font-bold mb-3">Mobile Version Coming Soon!</h2>
                 <p className="text-neutral-600 text-sm mb-2 leading-loose">
@@ -42,7 +42,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
             </div>
 
             {/* Desktop version */}
-            <div className="hidden xl:block h-full w-full">
+            <div className="hidden lg:block h-full w-full">
               <SidebarProvider defaultOpen={false}>
                 <AppSidebar />
 

@@ -2,79 +2,98 @@
 import { EllipsisVertical } from "lucide-react";
 import { Popover, PopoverTrigger } from "~/app/_components/ui/popover";
 import { PopoverContent } from "~/app/_components/ui/popover";
-import { type FileData } from "~/app/stores/filesStore";
+import { type FileData } from "~/lib/types/db-types";
 import { api } from "~/trpc/react";
-import { useFilesStore } from "~/app/stores/filesStore";
 import { useDeleteDialog } from "~/app/_components/deleteDialog";
 import { useEditDialog } from "~/app/_components/editDialog";
 import { toast } from "sonner";
-import { useMutation } from "@tanstack/react-query";
 
 export default function FileCard({ file }: { file: FileData }) {
   const { DeleteDialogComponent, setOpen: setDeleteDialogOpen } = useDeleteDialog();
   const { EditDialogComponent, setOpen: setEditDialogOpen } = useEditDialog();
 
-  const { removeFile, updateFile } = useFilesStore();
+  const utils = api.useUtils();
 
   const deleteFileMutation = api.files.deleteFile.useMutation({
+    onMutate: async ({ id }) => {
+      await utils.files.fetchFiles.cancel();
+
+      const previousFiles = utils.files.fetchFiles.getInfiniteData({ limit: 10 });
+
+      utils.files.fetchFiles.setInfiniteData({ limit: 10 }, (old) => {
+        if (!old) return { pages: [], pageParams: [] };
+
+        return {
+          ...old,
+          pages: old.pages.map((page) => ({
+            ...page,
+            items: page.items.filter((item) => item.id !== id),
+          })),
+        };
+      });
+
+      setDeleteDialogOpen(false);
+
+      return { previousFiles };
+    },
+    onError: (err, variables, context) => {
+      if (context?.previousFiles) {
+        utils.files.fetchFiles.setInfiniteData({ limit: 10 }, () => context.previousFiles);
+      }
+      toast.error("Failed to delete file");
+    },
+    onSettled: () => {
+      void utils.files.fetchFiles.invalidate();
+    },
     onSuccess: () => {
       toast.success("File deleted successfully");
     },
   });
 
   const updateFileNameMutation = api.files.updateFileName.useMutation({
+    onMutate: async ({ id, name }) => {
+      await utils.files.fetchFiles.cancel();
+
+      const previousFiles = utils.files.fetchFiles.getInfiniteData({ limit: 10 });
+
+      utils.files.fetchFiles.setInfiniteData({ limit: 10 }, (old) => {
+        if (!old) return { pages: [], pageParams: [] };
+
+        return {
+          ...old,
+          pages: old.pages.map((page) => ({
+            ...page,
+            items: page.items.map((item) => (item.id === id ? { ...item, fileName: name } : item)),
+          })),
+        };
+      });
+
+      setEditDialogOpen(false);
+
+      return { previousFiles };
+    },
+    onError: (err, variables, context) => {
+      if (context?.previousFiles) {
+        utils.files.fetchFiles.setInfiniteData({ limit: 10 }, () => context.previousFiles);
+      }
+
+      toast.error("Failed to update file name");
+    },
     onSuccess: () => {
       toast.success("File name updated successfully");
     },
   });
 
   const handleDelete = async () => {
-    try {
-      void deleteFileMutation.mutateAsync({ id: file.id });
-
-      removeFile(file.id);
-
-      setDeleteDialogOpen(false);
-    } catch (error) {
-      console.error("Failed to delete file:", error);
-    }
+    deleteFileMutation.mutate({ id: file.id });
   };
 
   const handleEdit = async (newFileName: string) => {
-    try {
-      void updateFileNameMutation.mutateAsync({ id: file.id, name: newFileName });
-
-      updateFile(file.id, { ...file, fileName: newFileName });
-
-      setEditDialogOpen(false);
-    } catch (error) {
-      console.error("Failed to update file name:", error);
-    }
+    updateFileNameMutation.mutate({ id: file.id, name: newFileName });
   };
 
-  const createEmbeddingsMutation = useMutation({
-    mutationFn: async (obj: FileData[]) => {
-      const res = await fetch("/api/bg/createEmbeddings", {
-        method: "POST",
-        body: JSON.stringify(
-          obj.map((file) => ({
-            fileUrl: file.fileUrl,
-            fileType: file.fileType,
-            id: file.id,
-          })),
-        ),
-      });
-    },
-  });
-
   return (
-    <div
-      onClick={() => {
-        createEmbeddingsMutation.mutate([file]);
-      }}
-      key={file.id}
-      className="border rounded-lg p-4 flex flex-col"
-    >
+    <div key={file.id} className="border rounded-lg p-4 flex flex-col">
       <div className="flex items-center mb-2 w-full justify-between">
         <FileIcon type={file.fileType} />
         <span className="ml-2 truncate">{file.fileName}</span>
