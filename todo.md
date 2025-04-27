@@ -19,7 +19,6 @@
 
 # Architecture Improvements
 
-- [ ] Move away from using zustand for state management especially for cases with infinite queries
 - [ ] Explore creating embeddings in the background using QStash with Upstash Workflows or Vercel CRON Jobs
 - [ ] Explore chunking files and embeddings and storing them in a separate table or vector database
 

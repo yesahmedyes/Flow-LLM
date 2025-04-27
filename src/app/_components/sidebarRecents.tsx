@@ -15,37 +15,40 @@ export default function SidebarRecents() {
 
   const { chats, addChats } = useChatsStore();
 
+  const utils = api.useUtils();
+
   const { id } = useParams();
   const router = useRouter();
 
-  const {
-    data: chatData,
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
-  } = api.chat.getChats.useInfiniteQuery(
+  const { data, fetchNextPage, hasNextPage, isFetchingNextPage } = api.chat.getChats.useInfiniteQuery(
     {
-      limit: 20,
+      limit: 10,
     },
     {
       getNextPageParam: (lastPage) => lastPage.nextCursor,
     },
   );
 
-  useEffect(() => {
-    if (chatData?.pages && chatData.pages.length > 0) {
-      const n_pages = chatData.pages.length;
+  const [pendingDeletes, setPendingDeletes] = useState(0);
 
-      const allChats = chatData.pages[n_pages - 1]?.items ?? [];
+  useEffect(() => {
+    if (data?.pages && data.pages.length > 0) {
+      const n_pages = data.pages.length;
+
+      const allChats = data.pages[n_pages - 1]?.items ?? [];
 
       addChats(allChats);
     }
-  }, [chatData, addChats]);
+  }, [data, addChats]);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0]?.isIntersecting && !isFetchingNextPage) {
+        if (
+          entries[0]?.isIntersecting &&
+          !isFetchingNextPage &&
+          pendingDeletes === 0 // Only allow fetch if no pending deletes
+        ) {
           void fetchNextPage();
         }
       },
@@ -65,23 +68,38 @@ export default function SidebarRecents() {
         observer.disconnect();
       }
     };
-  }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
+  }, [fetchNextPage, hasNextPage, isFetchingNextPage, pendingDeletes]);
 
-  const deleteChat = api.chat.deleteChat.useMutation();
+  const deleteChat = api.chat.deleteChat.useMutation({
+    onMutate: async ({ id }) => {
+      setPendingDeletes((c) => c + 1);
+
+      const previousChats = chats.find((chat) => chat.id === id);
+
+      removeChatById(id);
+
+      await utils.chat.getChats.cancel();
+
+      return { previousChats };
+    },
+    onError: (err, variables, context) => {
+      toast.error("Failed to delete chat");
+
+      if (context?.previousChats) {
+        addChats([context.previousChats]);
+      }
+    },
+    onSettled: async () => {
+      await utils.chat.getChats.invalidate();
+
+      setPendingDeletes((c) => Math.max(0, c - 1));
+    },
+  });
 
   const removeChatById = useChatsStore((state) => state.removeChatById);
 
   const handleDeleteChat = (chatId: string) => {
-    void deleteChat.mutate(
-      { id: chatId },
-      {
-        onSuccess: () => {
-          toast.success("Chat deleted successfully");
-        },
-      },
-    );
-
-    removeChatById(chatId);
+    deleteChat.mutate({ id: chatId });
 
     if (chatId === id) {
       router.replace("/chat");
