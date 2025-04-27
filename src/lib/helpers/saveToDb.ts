@@ -1,8 +1,8 @@
 import type { Message } from "ai";
 import { db } from "~/server/db";
 import { chats, files } from "~/server/db/schema";
-import type { FileData } from "~/app/stores/filesStore";
 import { and, eq, sql } from "drizzle-orm";
+import type { FileData } from "../types/db-types";
 
 export async function saveChat(data: { id: string; messages: Message[]; userId: string }) {
   await db

@@ -2,16 +2,20 @@ import openai from "~/server/init/openai";
 import { appendResponseMessages, streamText, type Message } from "ai";
 import { saveChat } from "~/lib/helpers/saveToDb";
 import { auth } from "@clerk/nextjs/server";
+import { createDataStreamResponse } from "ai";
 
 export const maxDuration = 60;
 
+type ChatRequest = {
+  id: string;
+  messages: Message[];
+  model: string;
+  searchFromFiles?: boolean;
+};
+
 export async function POST(req: Request) {
   try {
-    const { messages, id, model } = (await req.json()) as {
-      messages: Message[];
-      id: string;
-      model: string;
-    };
+    const { messages, id, model, searchFromFiles = false } = (await req.json()) as ChatRequest;
 
     const { userId } = await auth();
 
@@ -38,6 +42,8 @@ export async function POST(req: Request) {
       Never fabricate facts. If you're unsure, be honest and indicate that the information may need verification.
     `;
 
+    console.log("model", model);
+
     const result = streamText({
       model: openai(model),
       system: systemPrompt,
@@ -54,12 +60,21 @@ export async function POST(req: Request) {
       },
     });
 
-    return result.toDataStreamResponse({
-      sendSources: true,
-      sendReasoning: true,
-      getErrorMessage: (_) => {
-        return "An unknown error occurred. Please try again later.";
+    return createDataStreamResponse({
+      status: 200,
+      statusText: "OK",
+      headers: { "Content-Type": "application/json" },
+      async execute(dataStream) {
+        dataStream.writeMessageAnnotation({ type: "info", value: "Streaming will start soon..." });
+
+        result.mergeIntoDataStream(dataStream, {
+          sendSources: true,
+          sendReasoning: true,
+        });
+
+        dataStream.writeMessageAnnotation({ type: "info", value: "Streaming has ended." });
       },
+      onError: (_) => "An unknown error occurred. Please try again later.",
     });
   } catch (error) {
     console.error("Chat API error:", error);

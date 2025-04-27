@@ -2,6 +2,7 @@ import { type Message } from "ai";
 import { ScrollArea } from "../../_components/ui/scroll-area";
 import MemoizedMarkdown from "../../_components/memoizedMarkdown";
 import { useEffect, useRef } from "react";
+import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "~/app/_components/ui/accordion";
 
 interface FullChatProps {
   messages: Message[];
@@ -9,7 +10,6 @@ interface FullChatProps {
 }
 
 export default function FullChat({ messages, isLoading }: FullChatProps) {
-
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const prevMessagesLengthRef = useRef<number>(0);
   const lastContentLengthRef = useRef<number>(0);
@@ -41,8 +41,8 @@ export default function FullChat({ messages, isLoading }: FullChatProps) {
   }, [messages]);
 
   return (
-    <ScrollArea ref={scrollAreaRef} className="w-full max-w-4xl pt-16 pb-40">
-      <div className="w-full max-w-4xl space-y-4 my-4">
+    <ScrollArea ref={scrollAreaRef} className="w-full max-w-4xl pt-20 pb-48">
+      <div className="flex flex-col w-full max-w-4xl">
         {messages.map((message) => {
           if (message.role === "user") {
             return (
@@ -54,8 +54,47 @@ export default function FullChat({ messages, isLoading }: FullChatProps) {
             );
           } else if (message.role === "assistant") {
             return (
-              <div key={message.id} className="max-w-4xl px-2 py-3 prose dark:prose-invert">
-                <MemoizedMarkdown content={message.content} id={message.id} />
+              <div key={message.id} className="flex flex-col max-w-4xl px-2 py-8">
+                {message.annotations && message.annotations.length > 0 && (
+                  <Accordion type="single" collapsible>
+                    <AccordionItem value="annotations">
+                      <AccordionTrigger>Show agent details</AccordionTrigger>
+                      <AccordionContent>
+                        <div className="flex flex-col gap-3">
+                          {message.annotations.map((annotation, index) => {
+                            const annotationObject = annotation as { type: string; value: string };
+
+                            if (annotationObject.type === "info") {
+                              return (
+                                <div className="text-sm text-muted-foreground font-light" key={index}>
+                                  {annotationObject.value}
+                                </div>
+                              );
+                            }
+                            return null;
+                          })}
+                        </div>
+                      </AccordionContent>
+                    </AccordionItem>
+                  </Accordion>
+                )}
+
+                {message.parts && message.parts.length > 0 && (
+                  <div className="prose dark:prose-invert max-w-none">
+                    {message.parts?.map((part, index) => {
+                      if (part.type === "reasoning") {
+                        return (
+                          <div className="text-sm text-muted-foreground" key={index}>
+                            {part.reasoning}
+                          </div>
+                        );
+                      }
+                      if (part.type === "text") {
+                        return <MemoizedMarkdown content={part.text} id={message.id + index} key={index} />;
+                      }
+                    })}
+                  </div>
+                )}
               </div>
             );
           }

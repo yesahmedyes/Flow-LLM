@@ -17,9 +17,10 @@ interface ChatInterfaceProps {
 export default function ChatInterface({ id, initialMessages }: ChatInterfaceProps) {
   const { user } = useUser();
 
+  const [agentSelected, setAgentSelected] = useState(false);
+
   const { selectedModel } = useModelsStore();
 
-  // Keep track of initial message count to avoid updating timestamp when just viewing
   const initialMessageCount = useRef(initialMessages.length);
 
   const { messages, status, stop, append } = useChat({
@@ -35,15 +36,8 @@ export default function ChatInterface({ id, initialMessages }: ChatInterfaceProp
 
     // Use the append function from useChat to add messages
     await append(
-      {
-        role: "user",
-        content: message,
-      },
-      {
-        body: {
-          model: selectedModel,
-        },
-      },
+      { role: "user", content: message },
+      { body: { model: selectedModel, searchFromFiles: agentSelected } },
     );
   };
 
@@ -51,9 +45,17 @@ export default function ChatInterface({ id, initialMessages }: ChatInterfaceProp
   const updateChatName = useChatsStore((state) => state.updateChatName);
 
   useEffect(() => {
+    if (messages) {
+      console.log("messages", messages);
+    }
+  }, [messages]);
+
+  useEffect(() => {
     // Only update the chat if messages have actually changed (new messages added)
     if (messages.length > 0 && messages.length !== initialMessageCount.current) {
       updateChatById(id as string, messages as Message[], user!.id as string);
+
+      initialMessageCount.current = messages.length;
     }
 
     if (messages.length === 1 && initialMessageCount.current === 0) {
@@ -70,6 +72,8 @@ export default function ChatInterface({ id, initialMessages }: ChatInterfaceProp
         onSubmit={handleSubmit}
         isLoading={status === "streaming" || status === "submitted"}
         stop={stop}
+        agentSelected={agentSelected}
+        setAgentSelected={setAgentSelected}
       />
     </div>
   );

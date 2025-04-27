@@ -2,7 +2,6 @@
 
 - [ ] Add a memories page integrated with https://mem0.ai
 - [ ] Enable agentic mode in chat... enable web search and RAG
-- [ ] Deploy to Vercel
 
 # UI & Other Improvements
 
