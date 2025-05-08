@@ -15,7 +15,7 @@ export default function FileCard({ file }: { file: FileData }) {
   const utils = api.useUtils();
 
   const deleteFileMutation = api.files.deleteFile.useMutation({
-    onMutate: async ({ id }) => {
+    onMutate: async ({ fileUrl }) => {
       await utils.files.fetchFiles.cancel();
 
       const previousFiles = utils.files.fetchFiles.getInfiniteData({ limit: 10 });
@@ -27,7 +27,7 @@ export default function FileCard({ file }: { file: FileData }) {
           ...old,
           pages: old.pages.map((page) => ({
             ...page,
-            items: page.items.filter((item) => item.id !== id),
+            items: page.items.filter((item) => item.fileUrl !== fileUrl),
           })),
         };
       });
@@ -51,7 +51,7 @@ export default function FileCard({ file }: { file: FileData }) {
   });
 
   const updateFileNameMutation = api.files.updateFileName.useMutation({
-    onMutate: async ({ id, name }) => {
+    onMutate: async ({ fileUrl, name }) => {
       await utils.files.fetchFiles.cancel();
 
       const previousFiles = utils.files.fetchFiles.getInfiniteData({ limit: 10 });
@@ -63,7 +63,7 @@ export default function FileCard({ file }: { file: FileData }) {
           ...old,
           pages: old.pages.map((page) => ({
             ...page,
-            items: page.items.map((item) => (item.id === id ? { ...item, fileName: name } : item)),
+            items: page.items.map((item) => (item.fileUrl === fileUrl ? { ...item, fileName: name } : item)),
           })),
         };
       });
@@ -85,11 +85,11 @@ export default function FileCard({ file }: { file: FileData }) {
   });
 
   const handleDelete = async () => {
-    deleteFileMutation.mutate({ id: file.id });
+    deleteFileMutation.mutate({ fileUrl: file.fileUrl });
   };
 
   const handleEdit = async (newFileName: string) => {
-    updateFileNameMutation.mutate({ id: file.id, name: newFileName });
+    updateFileNameMutation.mutate({ fileUrl: file.fileUrl, name: newFileName });
   };
 
   return (

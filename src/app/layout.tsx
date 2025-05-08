@@ -9,9 +9,6 @@ import { SidebarProvider } from "./_components/ui/sidebar";
 import { AppSidebar } from "./_components/appSidebar";
 import { ClerkProvider } from "@clerk/nextjs";
 import TopBar from "./_components/topBar";
-import { extractRouterConfig } from "uploadthing/server";
-import { NextSSRPlugin } from "@uploadthing/react/next-ssr-plugin";
-import { ourFileRouter } from "~/app/api/uploadthing/core";
 
 export const metadata: Metadata = {
   title: "FlowLLM",
@@ -29,7 +26,6 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
     <html lang="en" className={`${geist.variable} tracking-wide leading-loose`} suppressHydrationWarning>
       <body>
         <ClerkProvider>
-          <NextSSRPlugin routerConfig={extractRouterConfig(ourFileRouter)} />
           <Provider>
             {/* Mobile version not available message */}
             <div className="lg:hidden flex items-center justify-center h-screen w-full bg-gradient-to-b from-gray-50 to-gray-100 p-6 text-center">

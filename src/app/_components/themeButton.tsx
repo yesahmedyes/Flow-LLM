@@ -3,6 +3,7 @@
 import { Moon, Sun, Sun1 } from "iconsax-react";
 import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
+import { api } from "~/trpc/react";
 
 export function ThemeButton() {
   const { theme, setTheme } = useTheme();
@@ -12,13 +13,12 @@ export function ThemeButton() {
     setMounted(true);
   }, []);
 
+  const changeThemeMutation = api.prefs.setTheme.useMutation();
+
   const handleThemeChange = async (newTheme: string) => {
     setTheme(newTheme);
 
-    await fetch("/api/prefs/theme", {
-      method: "POST",
-      body: JSON.stringify({ theme: newTheme }),
-    });
+    changeThemeMutation.mutate({ theme: newTheme });
   };
 
   if (!mounted) {

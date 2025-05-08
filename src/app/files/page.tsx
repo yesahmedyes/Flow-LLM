@@ -12,7 +12,7 @@ import { ScrollArea } from "../_components/ui/scroll-area";
 export default function Page() {
   const user = useUser();
 
-  const { data, fetchNextPage, hasNextPage, isFetchingNextPage } = api.files.fetchFiles.useInfiniteQuery(
+  const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } = api.files.fetchFiles.useInfiniteQuery(
     {
       limit: 10,
     },
@@ -98,7 +98,10 @@ export default function Page() {
               )}
             </>
           ) : (
-            <CustomLoader className="pt-8" />
+            <>
+              {isLoading && <CustomLoader className="pt-8" />}
+              {!isLoading && <p className="text-center text-sm text-muted-foreground pt-8">No files uploaded yet</p>}
+            </>
           )}
         </div>
       </ScrollArea>

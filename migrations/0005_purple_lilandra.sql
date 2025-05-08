@@ -1,1 +1,0 @@
-ALTER TABLE `flowgpt_file` ADD `embeddings` blob DEFAULT (json_array()) NOT NULL;

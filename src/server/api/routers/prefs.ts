@@ -2,8 +2,8 @@ import { z } from "zod";
 import { createTRPCRouter, protectedProcedure } from "../trpc";
 import { redis } from "~/server/init/redis";
 
-const getModelsKey = (userId: string) => `models:${userId}`;
-const themeKey = (userId: string) => `theme:${userId}`;
+const getModelsKey = (userId: string) => `cache:models:${userId}`;
+const themeKey = (userId: string) => `cache:theme:${userId}`;
 
 export const prefsRouter = createTRPCRouter({
   getPreferredModels: protectedProcedure.query(async ({ ctx }) => {

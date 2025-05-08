@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "db77cb04-2ad1-4f21-8dfc-8c130d3010cd",
+  "id": "ad49ab0a-da48-41af-a643-49a52a264de9",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
     "flowgpt_chat": {
@@ -12,8 +12,22 @@
           "type": "text(256)",
           "primaryKey": true,
           "notNull": true,
+          "autoincrement": false
+        },
+        "userId": {
+          "name": "userId",
+          "type": "text(256)",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "name": {
+          "name": "name",
+          "type": "text(256)",
+          "primaryKey": false,
+          "notNull": true,
           "autoincrement": false,
-          "default": "(randomblob(16))"
+          "default": "'New Chat'"
         },
         "messages": {
           "name": "messages",
@@ -40,19 +54,104 @@
         }
       },
       "indexes": {
-        "id_idx": {
-          "name": "id_idx",
+        "chat_id_idx": {
+          "name": "chat_id_idx",
           "columns": [
             "id"
           ],
           "isUnique": false
         },
-        "updated_at_idx": {
-          "name": "updated_at_idx",
+        "chat_updated_at_idx": {
+          "name": "chat_updated_at_idx",
           "columns": [
             "updatedAt"
           ],
           "isUnique": false
+        },
+        "chat_id_userId_idx": {
+          "name": "chat_id_userId_idx",
+          "columns": [
+            "id",
+            "userId"
+          ],
+          "isUnique": true
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "flowgpt_file": {
+      "name": "flowgpt_file",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text(256)",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "userId": {
+          "name": "userId",
+          "type": "text(256)",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "fileUrl": {
+          "name": "fileUrl",
+          "type": "text(256)",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "fileName": {
+          "name": "fileName",
+          "type": "text(256)",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "fileType": {
+          "name": "fileType",
+          "type": "text(256)",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "createdAt": {
+          "name": "createdAt",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "(unixepoch())"
+        },
+        "updatedAt": {
+          "name": "updatedAt",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "(unixepoch())"
+        }
+      },
+      "indexes": {
+        "file_updated_at_idx": {
+          "name": "file_updated_at_idx",
+          "columns": [
+            "updatedAt"
+          ],
+          "isUnique": false
+        },
+        "file_fileUrl_userId_idx": {
+          "name": "file_fileUrl_userId_idx",
+          "columns": [
+            "fileUrl",
+            "userId"
+          ],
+          "isUnique": true
         }
       },
       "foreignKeys": {},

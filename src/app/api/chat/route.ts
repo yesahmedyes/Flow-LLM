@@ -65,14 +65,14 @@ export async function POST(req: Request) {
       statusText: "OK",
       headers: { "Content-Type": "application/json" },
       async execute(dataStream) {
-        dataStream.writeMessageAnnotation({ type: "info", value: "Streaming will start soon..." });
+        if (searchFromFiles) {
+          dataStream.writeMessageAnnotation({ type: "info", value: "Searching from files..." });
+        }
 
         result.mergeIntoDataStream(dataStream, {
           sendSources: true,
           sendReasoning: true,
         });
-
-        dataStream.writeMessageAnnotation({ type: "info", value: "Streaming has ended." });
       },
       onError: (_) => "An unknown error occurred. Please try again later.",
     });

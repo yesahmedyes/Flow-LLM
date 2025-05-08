@@ -1,6 +1,6 @@
 # Major Pages / Features
 
-- [ ] Add a memories page integrated with https://mem0.ai
+- [ ] Add a memories page integrated with https://mem0.ai or https://www.getzep.com
 - [ ] Enable agentic mode in chat... enable web search and RAG
 
 # UI & Other Improvements
@@ -16,10 +16,9 @@
 - [ ] Ability to scroll up while message is streaming
 - [ ] Handle embedding for PDFs without text content
 
-# Architecture Improvements
+# Architecture
 
-- [ ] Explore creating embeddings in the background using QStash with Upstash Workflows or Vercel CRON Jobs
-- [ ] Explore chunking files and embeddings and storing them in a separate table or vector database
+- [ ] Make the AWS files private and only accessible using a temporary presigned URL
 
 # Stretch Goals
 

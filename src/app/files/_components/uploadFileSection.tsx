@@ -1,51 +1,121 @@
-import { UploadDropzone } from "~/lib/helpers/uploadThing";
-import type { ClientUploadedFileData } from "uploadthing/types";
-import { useMutation } from "@tanstack/react-query";
+import { useState, useCallback } from "react";
+import { UploadArea } from "./uploadArea";
 import { api } from "~/trpc/react";
-
-type UploadFileResponse = ClientUploadedFileData<{
-  userId: string;
-  fileUrl: string;
-  fileName: string;
-  fileType: string;
-  id: string;
-  createdAt: string;
-  updatedAt: string;
-}>;
+import { DocumentUpload } from "iconsax-react";
+import { toast } from "sonner";
 
 export default function UploadFileSection() {
   const utils = api.useUtils();
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
 
-  const createEmbeddingsMutation = useMutation({
-    mutationFn: async (obj: UploadFileResponse[]) => {
-      const res = await fetch("/api/bg/createEmbeddings", {
-        method: "POST",
-        body: JSON.stringify(obj.map((file) => file.serverData)),
-      });
+  const addFilesMutation = api.files.addFiles.useMutation({
+    onSuccess: () => {
+      toast.success("File(s) uploaded successfully");
+
+      void utils.files.fetchFiles.invalidate();
     },
   });
 
-  const handleUploadComplete = (res: UploadFileResponse[]) => {
-    createEmbeddingsMutation.mutate(res);
+  const onDrop = useCallback(async (acceptedFiles: File[]) => {
+    if (acceptedFiles.length === 0) return;
 
-    void utils.files.fetchFiles.invalidate();
-  };
+    setIsUploading(true);
+    setUploadProgress(0);
+
+    const filesToUpload = [] as { fileUrl: string; fileName: string; fileType: string }[];
+
+    try {
+      for (const file of acceptedFiles) {
+        const response = await fetch("/api/s3/presigned-url", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            fileName: file.name,
+            fileType: file.type,
+          }),
+        });
+
+        const { presignedUrl, fileUrl } = (await response.json()) as { presignedUrl: string; fileUrl: string };
+
+        await new Promise<void>((resolve, reject) => {
+          const xhr = new XMLHttpRequest();
+
+          xhr.open("PUT", presignedUrl);
+          xhr.setRequestHeader("Content-Type", file.type);
+
+          xhr.upload.onprogress = (event) => {
+            if (event.lengthComputable) {
+              const progress = Math.round((event.loaded / event.total) * 100);
+
+              setUploadProgress(progress);
+            }
+          };
+
+          xhr.onload = () => {
+            if (xhr.status === 200) {
+              resolve();
+            } else {
+              reject(new Error(`Upload failed with status: ${xhr.status}`));
+            }
+          };
+
+          xhr.onerror = () => {
+            reject(new Error("Upload failed"));
+          };
+
+          xhr.send(file);
+        });
+
+        filesToUpload.push({ fileUrl, fileName: file.name, fileType: file.type });
+      }
+
+      await addFilesMutation.mutateAsync({ fileUrls: filesToUpload });
+    } catch (error) {
+      console.error("Error uploading files:", error);
+    } finally {
+      setIsUploading(false);
+      setUploadProgress(0);
+    }
+  }, []);
+
+  const { getRootProps, getInputProps, isDragActive } = UploadArea({ onDrop });
 
   return (
     <div className="w-full mt-1.5 mb-10">
       <h2 className="text-xl font-semibold mb-4">Upload Files</h2>
-      <UploadDropzone
-        endpoint="imageUploader"
-        onClientUploadComplete={handleUploadComplete}
-        className="rounded-xl p-8 w-full border border-dashed"
-        appearance={{
-          container: "cursor-pointer bg-background",
-          uploadIcon: "text-muted-foreground",
-          label: "text-muted-foreground pt-4",
-          allowedContent: "text-muted-foreground pt-2 pb-6",
-          button: "bg-secondary text-secondary-foreground shadow-xs hover:bg-secondary/80 px-4 py-2 rounded-md",
-        }}
-      />
+      <div
+        {...getRootProps()}
+        className={`rounded-xl h-64 px-8 place-content-center w-full border border-dashed cursor-pointer bg-background ${
+          isDragActive ? "border-border" : "border-muted"
+        }`}
+      >
+        <input {...getInputProps()} />
+        <div className="flex flex-col items-center justify-center cursor-pointer">
+          {isUploading ? (
+            <>
+              <p className="text-muted-foreground">Uploading... {uploadProgress}%</p>
+            </>
+          ) : (
+            <>
+              <DocumentUpload className="h-9 w-9 stroke-muted-foreground" />
+              <p className="text-muted-foreground pt-5 text-sm">
+                {isDragActive
+                  ? "Dropped files will be automatically uploaded"
+                  : "Drop files here, or click to select files"}
+              </p>
+              <p className="text-muted-foreground pt-3 pb-6 text-sm">
+                Supports images, PDFs, and text files up to 16MB
+              </p>
+              <button className="bg-secondary text-secondary-foreground shadow-xs hover:bg-secondary/80 px-4 py-2 rounded-md">
+                Select Files
+              </button>
+            </>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

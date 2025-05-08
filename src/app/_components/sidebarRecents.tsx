@@ -20,7 +20,7 @@ export default function SidebarRecents() {
   const { id } = useParams();
   const router = useRouter();
 
-  const { data, fetchNextPage, hasNextPage, isFetchingNextPage } = api.chat.getChats.useInfiniteQuery(
+  const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } = api.chat.getChats.useInfiniteQuery(
     {
       limit: 10,
     },
@@ -199,7 +199,7 @@ export default function SidebarRecents() {
           );
         })}
 
-      {hasNextPage && (
+      {(isLoading || hasNextPage) && (
         <div ref={sentinelRef}>
           <Loader2 className="mt-4 mb-6 mx-auto h-6 w-6 animate-spin text-muted-foreground" />
         </div>
