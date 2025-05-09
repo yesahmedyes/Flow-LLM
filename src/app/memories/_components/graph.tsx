@@ -652,102 +652,122 @@ export const Graph = forwardRef<GraphRef, GraphProps>((props, ref) => {
     });
 
     simulation.on("tick", () => {
-      link.each(function (this: SVGGElement, d: LinkDatum) {
+      link.each(function (d: LinkDatum) {
         if (typeof d.source === "string" || !d.source.x) {
-          const sourceNode = nodes.find(
-            (n: NodeDatum) => n.id === (typeof d.source === "string" ? d.source : d.source.id),
-          );
-          if (sourceNode) {
-            d.source = sourceNode;
-          }
+          const sourceNode = nodes.find((n) => n.id === (typeof d.source === "string" ? d.source : d.source.id));
+          if (sourceNode) d.source = sourceNode;
         }
 
         if (typeof d.target === "string" || !d.target.x) {
-          const targetNode = nodes.find(
-            (n: NodeDatum) => n.id === (typeof d.target === "string" ? d.target : d.target.id),
-          );
-          if (targetNode) {
-            d.target = targetNode;
-          }
+          const targetNode = nodes.find((n) => n.id === (typeof d.target === "string" ? d.target : d.target.id));
+          if (targetNode) d.target = targetNode;
         }
 
-        const linkGroup = d3.select<SVGGElement, LinkDatum>(this);
-        linkGroup.selectAll<SVGPathElement, unknown>("path").each(function (this: SVGPathElement) {
+        const linkGroup = d3.select(this);
+
+        linkGroup.selectAll("path").each(function () {
           const path = d3.select(this);
           const curveStrength = +path.attr("data-curve-strength") || 0;
 
-          const source = d.source as NodeDatum;
-          const target = d.target as NodeDatum;
+          if (typeof d.source === "string" || typeof d.target === "string") {
+            return;
+          }
 
-          if (source.id === target.id && source.x !== undefined && source.y !== undefined) {
+          const sourceX = d.source.x ?? 0;
+          const sourceY = d.source.y ?? 0;
+          const targetX = d.target.x ?? 0;
+          const targetY = d.target.y ?? 0;
+
+          if (d.source.id === d.target.id) {
             const radiusX = 40;
             const radiusY = 90;
             const offset = radiusY + 20;
 
-            const cx = source.x;
-            const cy = source.y - offset;
-            const path_d = `M${source.x},${source.y} 
-              C${cx - radiusX},${cy} 
-               ${cx + radiusX},${cy} 
-               ${source.x},${source.y}`;
+            const cx = sourceX;
+            const cy = sourceY - offset;
+            const path_d = `M${sourceX},${sourceY} C${cx - radiusX},${cy} ${cx + radiusX},${cy} ${sourceX},${sourceY}`;
+
             path.attr("d", path_d);
 
-            const pathNode = path.node()! as SVGPathElement;
+            const labelGroup = linkGroup.selectAll(`.link-label[data-curve-strength="${curveStrength}"]`);
+            labelGroup.attr("transform", `translate(${cx}, ${cy - 10})`);
 
-            if (pathNode) {
-              const pathLength = pathNode.getTotalLength();
-              const midPoint = pathNode.getPointAtLength(pathLength / 2);
+            const text = labelGroup.select("text");
+            const rect = labelGroup.select("rect");
 
-              const labelGroup = linkGroup.selectAll<SVGGElement, unknown>(".link-label").filter(function (
-                this: SVGGElement,
-              ) {
-                return d3.select(this).attr("data-curve-strength") === String(curveStrength);
-              });
+            const textNode = text.node() as SVGTextElement | null;
 
-              if (midPoint) {
-                const text = labelGroup.select<SVGTextElement>("text");
-                const rect = labelGroup.select<SVGRectElement>("rect");
+            if (textNode) {
+              try {
+                const textBBox = textNode.getBBox();
 
-                if (text.node() && rect.node()) {
-                  const textBBox = text.node()?.getBBox();
-
-                  if (textBBox) {
-                    const angle = (Math.atan2(target.y ?? 0 - source.y, target.x ?? 0 - source.x) * 180) / Math.PI;
-                    const rotationAngle = angle > 90 || angle < -90 ? angle - 180 : angle;
-
-                    labelGroup.attr("transform", `translate(${midPoint.x}, ${midPoint.y}) rotate(${rotationAngle})`);
-
-                    rect
-                      .attr("x", -textBBox.width / 2 - 6)
-                      .attr("y", -textBBox.height / 2 - 4)
-                      .attr("width", textBBox.width + 12)
-                      .attr("height", textBBox.height + 8);
-
-                    text.attr("x", 0).attr("y", 0);
-                  }
-                }
+                rect
+                  .attr("x", -textBBox.width / 2 - 6)
+                  .attr("y", -textBBox.height / 2 - 4)
+                  .attr("width", textBBox.width + 12)
+                  .attr("height", textBBox.height + 8);
+              } catch (e) {
+                console.warn("Failed to get text bounding box", e);
               }
             }
-          } else if (
-            source.x !== undefined &&
-            source.y !== undefined &&
-            target.x !== undefined &&
-            target.y !== undefined
-          ) {
-            const dx = target.x - source.x;
-            const dy = target.y - source.y;
+          } else {
+            const dx = targetX - sourceX;
+            const dy = targetY - sourceY;
             const dr = Math.sqrt(dx * dx + dy * dy);
 
-            const midX = (source.x + target.x) / 2;
-            const midY = (source.y + target.y) / 2;
+            const midX = (sourceX + targetX) / 2;
+            const midY = (sourceY + targetY) / 2;
             const normalX = -dy / dr;
             const normalY = dx / dr;
             const curveMagnitude = dr * curveStrength;
             const controlX = midX + normalX * curveMagnitude;
             const controlY = midY + normalY * curveMagnitude;
 
-            const path_d = `M${source.x},${source.y} Q${controlX},${controlY} ${target.x},${target.y}`;
+            const path_d = `M${sourceX},${sourceY} Q${controlX},${controlY} ${targetX},${targetY}`;
+
             path.attr("d", path_d);
+
+            const pathNode = path.node() as SVGPathElement | null;
+
+            if (pathNode) {
+              try {
+                const pathLength = pathNode.getTotalLength();
+                const midPoint = pathNode.getPointAtLength(pathLength / 2);
+
+                const labelGroup = linkGroup.selectAll(`.link-label[data-curve-strength="${curveStrength}"]`);
+
+                const angle = (Math.atan2(targetY - sourceY, targetX - sourceX) * 180) / Math.PI;
+                const rotationAngle = angle > 90 || angle < -90 ? angle - 180 : angle;
+
+                if (midPoint) {
+                  labelGroup.attr(
+                    "transform",
+                    `translate(${midPoint.x ?? 0}, ${midPoint.y ?? 0}) rotate(${rotationAngle})`,
+                  );
+
+                  const text = labelGroup.select("text");
+                  const rect = labelGroup.select("rect");
+
+                  const textNode = text.node() as SVGTextElement | null;
+
+                  if (textNode) {
+                    try {
+                      const textBBox = textNode.getBBox();
+
+                      rect
+                        .attr("x", -textBBox.width / 2 - 6)
+                        .attr("y", -textBBox.height / 2 - 4)
+                        .attr("width", textBBox.width + 12)
+                        .attr("height", textBBox.height + 8);
+                    } catch (e) {
+                      console.warn("Failed to get text bounding box", e);
+                    }
+                  }
+                }
+              } catch (e) {
+                console.warn("Failed to calculate path measurements", e);
+              }
+            }
           }
         });
       });
@@ -832,6 +852,7 @@ export const Graph = forwardRef<GraphRef, GraphProps>((props, ref) => {
 
   return (
     <svg
+      className="mt-auto"
       ref={svgRef}
       width={width}
       height={height}

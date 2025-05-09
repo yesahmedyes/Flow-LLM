@@ -1,4 +1,6 @@
 import type { ZepClient } from "@getzep/zep-cloud";
+import type { EntityNode } from "@getzep/zep-cloud/api/types/EntityNode";
+import type { EntityEdge } from "@getzep/zep-cloud/api/types/EntityEdge";
 import { z } from "zod";
 import type { Edge, Node } from "~/lib/types/graph";
 import { createTriplets } from "~/lib/utils/graph";
@@ -17,7 +19,7 @@ export const memoryRouter = createTRPCRouter({
       const { user } = ctx;
 
       await zep.graph.add({
-        data: input.memory,
+        data: "The user has a new memory: " + input.memory,
         type: "text",
         userId: user.id,
       });
@@ -46,6 +48,35 @@ interface PaginatedResponse<T> {
   nextCursor: string | null;
 }
 
+const transformSDKNode = (node: EntityNode): Node => {
+  return {
+    uuid: node.uuid,
+    name: node.name,
+    summary: node.summary,
+    labels: node.labels,
+    created_at: node.createdAt,
+    updated_at: "",
+    attributes: node.attributes,
+  };
+};
+
+const transformSDKEdge = (edge: EntityEdge): Edge => {
+  return {
+    uuid: edge.uuid,
+    source_node_uuid: edge.sourceNodeUuid,
+    target_node_uuid: edge.targetNodeUuid,
+    type: "",
+    name: edge.name,
+    fact: edge.fact,
+    episodes: edge.episodes,
+    created_at: edge.createdAt,
+    updated_at: "",
+    valid_at: edge.validAt,
+    expired_at: edge.expiredAt,
+    invalid_at: edge.invalidAt,
+  };
+};
+
 async function getNodes(id: string, zep: ZepClient, cursor?: string): Promise<PaginatedResponse<Node>> {
   try {
     const nodes = await zep.graph.node.getByUserId(id, {
@@ -53,7 +84,7 @@ async function getNodes(id: string, zep: ZepClient, cursor?: string): Promise<Pa
       limit: NODE_BATCH_SIZE,
     });
 
-    const transformedNodes = nodes.map((node) => node as unknown as Node);
+    const transformedNodes = nodes.map(transformSDKNode);
 
     return {
       data: transformedNodes,
@@ -72,7 +103,7 @@ async function getEdges(id: string, zep: ZepClient, cursor?: string): Promise<Pa
       limit: EDGE_BATCH_SIZE,
     });
 
-    const transformedEdges = edges.map((edge) => edge as unknown as Edge);
+    const transformedEdges = edges.map(transformSDKEdge);
 
     return {
       data: transformedEdges,

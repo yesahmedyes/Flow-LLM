@@ -9,6 +9,9 @@ import type { GraphRef } from "./_components/graph";
 import { Loader2 } from "lucide-react";
 import type { NodePopupContent, EdgePopupContent } from "~/lib/types/graph";
 import { GraphPopovers } from "./_components/popovers";
+import { Textarea } from "../_components/ui/textarea";
+import { toast } from "sonner";
+import { utils } from "prettier/doc.js";
 
 // Dynamically import the Graph component with SSR disabled
 const Graph = dynamic(() => import("./_components/graph").then((mod) => mod.Graph), {
@@ -91,34 +94,78 @@ export default function MemoriesPage() {
     setShowEdgePopup(false);
   };
 
+  const addMemoryMutation = api.memory.addMemoryToGraph.useMutation({
+    onMutate: () => {
+      toast.info("New memory is being added.");
+    },
+    onSuccess: () => {
+      toast.info("Refresh the page in a few minutes to see the updated graph.");
+    },
+  });
+
+  const [newMemory, setNewMemory] = useState<string>("");
+
+  const handleSubmit = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+
+      addMemoryMutation.mutate({ memory: newMemory });
+
+      setNewMemory("");
+    }
+  };
+
   return (
-    <div className="flex justify-end place-items-end h-full w-full">
+    <div className="flex w-full mx-auto flex-col items-center h-full">
       {isLoading ? (
         <div className="flex justify-center items-center h-full w-full pb-12">
           <Loader2 className="w-10 h-10 animate-spin" />
         </div>
       ) : (
         <>
-          <Graph
-            ref={graphRef}
-            triplets={graphTriplets}
-            width={window.innerWidth}
-            height={window.innerHeight - 60}
-            onNodeClick={handleNodeClick}
-            onEdgeClick={handleEdgeClick}
-            onBlur={handlePopoverClose}
-            zoomOnMount={true}
-            labelColorMap={sharedLabelColorMap}
-          />
+          {graphTriplets.length > 0 ? (
+            <>
+              <Graph
+                ref={graphRef}
+                triplets={graphTriplets}
+                width={window.innerWidth}
+                height={window.innerHeight - 60}
+                onNodeClick={handleNodeClick}
+                onEdgeClick={handleEdgeClick}
+                onBlur={handlePopoverClose}
+                zoomOnMount={true}
+                labelColorMap={sharedLabelColorMap}
+              />
 
-          <GraphPopovers
-            showNodePopup={showNodePopup}
-            showEdgePopup={showEdgePopup}
-            nodePopupContent={nodePopupContent}
-            edgePopupContent={edgePopupContent}
-            onOpenChange={handlePopoverClose}
-            labelColorMap={sharedLabelColorMap}
-          />
+              <GraphPopovers
+                showNodePopup={showNodePopup}
+                showEdgePopup={showEdgePopup}
+                nodePopupContent={nodePopupContent}
+                edgePopupContent={edgePopupContent}
+                onOpenChange={handlePopoverClose}
+              />
+            </>
+          ) : (
+            <div className="flex justify-center items-center h-full w-full pb-20">
+              <p className="text-sm text-muted-foreground">No memories found</p>
+            </div>
+          )}
+
+          <div className={`fixed flex flex-col items-center w-full bottom-12`}>
+            <div
+              className={`flex flex-col justify-between rounded-2xl border bg-background border-foreground/10 px-2 py-2 w-4xl`}
+            >
+              <div className="flex items-center">
+                <Textarea
+                  placeholder="Ask New Memory"
+                  className={`border-none focus-visible:ring-0 pr-6`}
+                  value={newMemory}
+                  onChange={(e) => setNewMemory(e.target.value)}
+                  onKeyDown={handleSubmit}
+                />
+              </div>
+            </div>
+          </div>
         </>
       )}
     </div>
