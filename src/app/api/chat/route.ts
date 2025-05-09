@@ -1,6 +1,6 @@
 import openai from "~/server/init/openai";
 import { appendResponseMessages, generateText, createDataStreamResponse, streamText, type Message } from "ai";
-import { saveChat } from "~/lib/helpers/saveToDb";
+import { saveChat } from "~/lib/utils/saveToDb";
 import { auth } from "@clerk/nextjs/server";
 import { chainOfThoughtPrompt, queryRewritePrompt, systemPrompt, webSearchPrompt } from "./prompts";
 import type { Agent } from "~/app/stores/agentStore";

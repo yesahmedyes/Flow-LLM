@@ -4,7 +4,7 @@ import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { db } from "~/server/db";
 import { files } from "~/server/db/schema";
 import { eq, desc, and } from "drizzle-orm";
-import { enqueueTask, removeTask } from "~/lib/helpers/redisHelpers";
+import { enqueueTask, removeTask } from "~/lib/utils/redisHelpers";
 
 const fileSchema = z.object({
   fileUrl: z.string(),

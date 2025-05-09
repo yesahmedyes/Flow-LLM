@@ -3,7 +3,7 @@ import { filesRouter } from "~/server/api/routers/files";
 import { createCallerFactory, createTRPCRouter } from "~/server/api/trpc";
 import { modelsRouter } from "./routers/models";
 import { prefsRouter } from "./routers/prefs";
-
+import { memoryRouter } from "./routers/memory";
 /**
  * This is the primary router for your server.
  *
@@ -14,6 +14,7 @@ export const appRouter = createTRPCRouter({
   files: filesRouter,
   models: modelsRouter,
   prefs: prefsRouter,
+  memory: memoryRouter,
 });
 
 // export type definition of API
