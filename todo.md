@@ -13,8 +13,6 @@
 - [ ] Show reasoning, sources, and errors in response
 - [ ] Ability to edit last sent message and resend
 - [ ] Ability to scroll up while message is streaming
-- [ ] Handle embedding for PDFs without text content
-- [ ] Add all agent features
 
 # Architecture
 

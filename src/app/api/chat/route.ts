@@ -2,7 +2,7 @@ import openai from "~/server/init/openai";
 import { appendResponseMessages, generateText, createDataStreamResponse, streamText, type Message } from "ai";
 import { saveChat } from "~/lib/helpers/saveToDb";
 import { auth } from "@clerk/nextjs/server";
-import { chainOfThoughtPrompt, queryRewritePrompt, systemPrompt } from "./prompts";
+import { chainOfThoughtPrompt, queryRewritePrompt, systemPrompt, webSearchPrompt } from "./prompts";
 import type { Agent } from "~/app/stores/agentStore";
 import pinecone from "~/server/init/pinecone";
 import cohere from "~/server/init/cohere";
@@ -141,6 +141,20 @@ export async function POST(req: Request) {
           }
         }
 
+        if (agent?.webSearch) {
+          dataStream.writeMessageAnnotation({ type: "info", value: "Searching the web..." });
+
+          const result = await generateText({
+            model: openai("perplexity/sonar:online"),
+            system: webSearchPrompt,
+            messages: [{ role: "user", content: enhancedContent }],
+          });
+
+          dataStream.writeMessageAnnotation({ type: "web-search", value: result.text });
+
+          enhancedContent = `${enhancedContent}\n\n Here's some relevant infromation I found on the web that you can use to answer the question: ${result.text}`;
+        }
+
         if (enhancedContent !== userMessage) {
           processedMessages = processedMessages.slice(0, -1);
 
@@ -151,16 +165,6 @@ export async function POST(req: Request) {
           model: openai(model),
           system: systemPrompt,
           messages: processedMessages,
-          async onFinish({ response }) {
-            await saveChat({
-              id,
-              messages: appendResponseMessages({
-                messages: messages as Message[],
-                responseMessages: response.messages,
-              }),
-              userId,
-            });
-          },
         });
 
         result.mergeIntoDataStream(dataStream, {
