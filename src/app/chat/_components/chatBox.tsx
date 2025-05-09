@@ -4,6 +4,7 @@ import { Add } from "iconsax-react";
 import { Popover, PopoverContent, PopoverTrigger } from "../../_components/ui/popover";
 import { Textarea } from "../../_components/ui/textarea";
 import { useState } from "react";
+import AgentSelection from "../../_components/agentSelection";
 
 interface ChatBoxProps {
   messagesPresent: boolean;
@@ -25,6 +26,16 @@ export default function ChatBox(props: ChatBoxProps) {
       onSubmit(message);
 
       setMessage("");
+    }
+  };
+
+  const [openAgentDialog, setOpenAgentDialog] = useState(false);
+
+  const onAgentSelected = (agentSelected: boolean) => {
+    setAgentSelected(agentSelected);
+
+    if (agentSelected) {
+      setOpenAgentDialog(true);
     }
   };
 
@@ -66,7 +77,7 @@ export default function ChatBox(props: ChatBoxProps) {
               </PopoverContent>
             </Popover>
             <div
-              onClick={() => setAgentSelected(!agentSelected)}
+              onClick={() => onAgentSelected(!agentSelected)}
               className={`text-xs font-normal px-5 bg-popover cursor-pointer py-2 rounded-full border ${agentSelected ? "border-blue-500/50 text-blue-500 " : "border-neutral-800 text-muted-foreground"}`}
             >
               Agent
@@ -84,6 +95,8 @@ export default function ChatBox(props: ChatBoxProps) {
           )}
         </div>
       </div>
+
+      <AgentSelection open={openAgentDialog} setOpen={setOpenAgentDialog} />
     </div>
   );
 }

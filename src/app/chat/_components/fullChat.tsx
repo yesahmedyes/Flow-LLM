@@ -64,14 +64,11 @@ export default function FullChat({ messages, isLoading }: FullChatProps) {
                           {message.annotations.map((annotation, index) => {
                             const annotationObject = annotation as { type: string; value: string };
 
-                            if (annotationObject.type === "info") {
-                              return (
-                                <div className="text-sm text-muted-foreground font-light" key={index}>
-                                  {annotationObject.value}
-                                </div>
-                              );
-                            }
-                            return null;
+                            return (
+                              <div className="text-sm text-muted-foreground font-light" key={index}>
+                                {annotationObject.value}
+                              </div>
+                            );
                           })}
                         </div>
                       </AccordionContent>

@@ -1,7 +1,6 @@
 # Major Pages / Features
 
 - [ ] Add a memories page integrated with https://mem0.ai or https://www.getzep.com
-- [ ] Enable agentic mode in chat... enable web search and RAG
 
 # UI & Other Improvements
 
@@ -15,6 +14,7 @@
 - [ ] Ability to edit last sent message and resend
 - [ ] Ability to scroll up while message is streaming
 - [ ] Handle embedding for PDFs without text content
+- [ ] Add all agent features
 
 # Architecture
 

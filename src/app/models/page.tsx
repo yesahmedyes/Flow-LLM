@@ -40,8 +40,8 @@ export default function ModelsPage() {
 
   const sortedModels = useMemo(() => {
     return filteredModels.sort((a, b) => {
-      const aIsPreferred = preferredModels.includes(a.id);
-      const bIsPreferred = preferredModels.includes(b.id);
+      const aIsPreferred = preferredModels.some((model) => model.id === a.id);
+      const bIsPreferred = preferredModels.some((model) => model.id === b.id);
 
       if (aIsPreferred && !bIsPreferred) return -1;
       if (!aIsPreferred && bIsPreferred) return 1;
@@ -53,13 +53,17 @@ export default function ModelsPage() {
   const togglePreferred = (e: React.MouseEvent, modelId: string) => {
     e.stopPropagation();
 
-    if (preferredModels.includes(modelId)) {
-      const updatedModels = preferredModels.filter((model) => model !== modelId);
+    const model = allModels.find((model) => model.id === modelId);
+
+    if (!model) return;
+
+    if (preferredModels.includes(model)) {
+      const updatedModels = preferredModels.filter((m) => m !== model);
 
       setPreferredModels(updatedModels);
       savePreferredModelsMutation({ models: updatedModels });
     } else {
-      const updatedModels = [...preferredModels, modelId];
+      const updatedModels = [...preferredModels, model];
 
       setPreferredModels(updatedModels);
       savePreferredModelsMutation({ models: updatedModels });
@@ -97,7 +101,7 @@ export default function ModelsPage() {
                 <Badge variant="outline">{model.architecture.modality}</Badge>
                 <Heart
                   size={20}
-                  className={`${preferredModels.includes(model.id) ? "fill-foreground stroke-foreground" : "stroke-muted-foreground"}`}
+                  className={`${preferredModels.some((m) => m.id === model.id) ? "fill-foreground stroke-foreground" : "stroke-muted-foreground"}`}
                   onClick={(e) => togglePreferred(e, model.id)}
                 />
               </CardFooter>
@@ -129,9 +133,22 @@ export default function ModelsPage() {
 
                   <div className="text-muted-foreground">Tokenizer</div>
                   <div>{selectedModel.architecture.tokenizer}</div>
+                </div>
+              </div>
 
-                  <div className="text-muted-foreground">Instruct Type</div>
-                  <div>{selectedModel.architecture.instruct_type}</div>
+              <Separator />
+
+              <div className="flex flex-col gap-4 p-6">
+                <h4 className="text-sm font-medium">Supported Features</h4>
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  <div className="text-muted-foreground">Tool Usage</div>
+                  <div>{selectedModel.supported_parameters.includes("tools") ? "Yes" : "No"}</div>
+
+                  <div className="text-muted-foreground">Reasoning</div>
+                  <div>{selectedModel.supported_parameters.includes("reasoning") ? "Yes" : "No"}</div>
+
+                  <div className="text-muted-foreground">Web Search</div>
+                  <div>{selectedModel.supported_parameters.includes("web_search_options") ? "Yes" : "No"}</div>
                 </div>
               </div>
 

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useCallback } from "react";
 import { useChat } from "@ai-sdk/react";
 import ChatBox from "./chatBox";
 import FullChat from "./fullChat";
@@ -8,6 +8,7 @@ import { useChatsStore } from "../../stores/chatsStore";
 import type { Message } from "ai";
 import { useUser } from "@clerk/nextjs";
 import { useModelsStore } from "~/app/stores/modelsStore";
+import { useAgentStore } from "~/app/stores/agentStore";
 
 interface ChatInterfaceProps {
   id: string;
@@ -18,6 +19,7 @@ export default function ChatInterface({ id, initialMessages }: ChatInterfaceProp
   const { user } = useUser();
 
   const [agentSelected, setAgentSelected] = useState(false);
+  const { agent } = useAgentStore();
 
   const { selectedModel } = useModelsStore();
 
@@ -29,17 +31,22 @@ export default function ChatInterface({ id, initialMessages }: ChatInterfaceProp
     sendExtraMessageFields: true,
   });
 
-  const handleSubmit = async (message: string) => {
-    if (message.length === 0) {
-      return;
-    }
+  const handleSubmit = useCallback(
+    async (message: string) => {
+      if (message.length === 0) {
+        return;
+      }
 
-    // Use the append function from useChat to add messages
-    await append(
-      { role: "user", content: message },
-      { body: { model: selectedModel, searchFromFiles: agentSelected } },
-    );
-  };
+      const body = {
+        model: selectedModel,
+        agent: agentSelected ? agent : undefined,
+      };
+
+      // Use the append function from useChat to add messages
+      await append({ role: "user", content: message }, { body });
+    },
+    [selectedModel, agentSelected, agent, append],
+  );
 
   const updateChatById = useChatsStore((state) => state.updateChatById);
   const updateChatName = useChatsStore((state) => state.updateChatName);
