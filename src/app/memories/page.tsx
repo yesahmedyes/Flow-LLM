@@ -92,9 +92,9 @@ export default function MemoriesPage() {
   };
 
   return (
-    <div className="flex flex-col gap-4 justify-center items-center h-full w-9/12 mx-auto">
+    <div className="flex justify-end place-items-end h-full w-full">
       {isLoading ? (
-        <div className="flex justify-center items-center h-full w-full">
+        <div className="flex justify-center items-center h-full w-full pb-12">
           <Loader2 className="w-10 h-10 animate-spin" />
         </div>
       ) : (
@@ -103,7 +103,7 @@ export default function MemoriesPage() {
             ref={graphRef}
             triplets={graphTriplets}
             width={window.innerWidth}
-            height={window.innerHeight}
+            height={window.innerHeight - 60}
             onNodeClick={handleNodeClick}
             onEdgeClick={handleEdgeClick}
             onBlur={handlePopoverClose}

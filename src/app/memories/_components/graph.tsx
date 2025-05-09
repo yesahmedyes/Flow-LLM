@@ -1,20 +1,57 @@
-/* eslint-disable @typescript-eslint/ban-ts-comment */
-/* eslint-disable @typescript-eslint/no-unsafe-return */
-/* eslint-disable @typescript-eslint/unbound-method */
-/* eslint-disable @typescript-eslint/no-unsafe-argument */
-/* eslint-disable @typescript-eslint/no-empty-function */
-/* eslint-disable @typescript-eslint/no-unsafe-call */
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useEffect, useRef, useMemo, useCallback, useImperativeHandle, forwardRef } from "react";
 import * as d3 from "d3";
+
 import colors from "tailwindcss/colors";
 import { useTheme } from "next-themes";
 import type { GraphTriplet, IdValue, GraphNode } from "~/lib/types/graph";
 import { getNodeColor as getNodeColorByLabel } from "~/lib/utils/nodeColors";
+
+interface NodeDatum extends d3.SimulationNodeDatum {
+  id: string;
+  value: string;
+  primaryLabel?: string;
+  x?: number;
+  y?: number;
+  fx?: number | null;
+  fy?: number | null;
+}
+
+type NodeSource = string | NodeDatum;
+
+interface LinkDatum {
+  source: NodeSource;
+  target: NodeSource;
+  relations: string[];
+  relationData: IdValue[];
+  curveStrength: number;
+}
+
+function getNodeId(node: NodeSource): string {
+  return typeof node === "string" ? node : node.id;
+}
+
+function getNodeX(node: NodeSource): number | undefined {
+  return typeof node === "string" ? undefined : node.x;
+}
+
+function getNodeY(node: NodeSource): number | undefined {
+  return typeof node === "string" ? undefined : node.y;
+}
+
+interface DragEvent extends d3.D3DragEvent<SVGGElement, NodeDatum, NodeDatum> {
+  sourceEvent: MouseEvent & {
+    target: Element;
+  };
+}
+
+interface CustomEventWithTarget {
+  stopPropagation: () => void;
+  target?: {
+    closest: (selector: string) => Element | null;
+  };
+}
 
 interface GraphProps {
   triplets: GraphTriplet[];
@@ -27,38 +64,39 @@ interface GraphProps {
   labelColorMap: Map<string, number>;
 }
 
-// Add ref type for zoomToLinkById
 export interface GraphRef {
   zoomToLinkById: (linkId: string) => void;
 }
 
-// eslint-disable-next-line react/display-name
 export const Graph = forwardRef<GraphRef, GraphProps>((props, ref) => {
   const { triplets, width, height, zoomOnMount, onNodeClick, onEdgeClick, onBlur, labelColorMap } = props;
 
   const svgRef = useRef<SVGSVGElement>(null);
   const { resolvedTheme: themeMode } = useTheme();
 
-  // Function refs to keep track of reset functions
   const resetLinksRef = useRef<(() => void) | null>(null);
   const resetNodesRef = useRef<(() => void) | null>(null);
-  const handleLinkClickRef = useRef<((event: any, d: any, relation: IdValue) => void) | null>(null);
-  const simulationRef = useRef<d3.Simulation<d3.SimulationNodeDatum, undefined> | null>(null);
+
+  const handleLinkClickRef = useRef<((event: CustomEventWithTarget, d: LinkDatum, relation: IdValue) => void) | null>(
+    null,
+  );
+
+  const simulationRef = useRef<d3.Simulation<NodeDatum, undefined> | null>(null);
+
   const zoomRef = useRef<d3.ZoomBehavior<SVGSVGElement, unknown> | null>(null);
+
   const isInitializedRef = useRef(false);
 
-  // Add ref for zoomToLinkById
   const graphRef = useRef<GraphRef>({
     zoomToLinkById: (linkId: string) => {
       if (!svgRef.current || !resetLinksRef.current || !resetNodesRef.current || !handleLinkClickRef.current) return;
       const svgElement = d3.select(svgRef.current);
-      const linkGroups = svgElement.selectAll("g > g"); // Select all link groups
+      const linkGroups = svgElement.selectAll<SVGGElement, LinkDatum>("g > g");
 
       let found = false;
 
-      // Iterate through link groups to find matching relation
-      linkGroups.each(function (d: any) {
-        if (found) return; // Skip if already found
+      linkGroups.each(function (d: LinkDatum) {
+        if (found) return;
 
         if (d?.relationData) {
           const relation = d.relationData.find((r: IdValue) => r.id === linkId);
@@ -70,7 +108,16 @@ export const Graph = forwardRef<GraphRef, GraphProps>((props, ref) => {
 
             if (resetLinks) resetLinks();
             if (resetNodes) resetNodes();
-            if (handleLinkClick) handleLinkClick({ stopPropagation: () => {} }, d, relation);
+            if (handleLinkClick)
+              handleLinkClick(
+                {
+                  stopPropagation: () => {
+                    return;
+                  },
+                },
+                d,
+                relation,
+              );
           }
         }
       });
@@ -81,10 +128,8 @@ export const Graph = forwardRef<GraphRef, GraphProps>((props, ref) => {
     },
   });
 
-  // Expose the ref through forwardRef
   useImperativeHandle(ref, () => graphRef.current);
 
-  // Memoize theme to prevent unnecessary recreation
   const theme = useMemo(
     () => ({
       node: {
@@ -114,7 +159,6 @@ export const Graph = forwardRef<GraphRef, GraphProps>((props, ref) => {
     [themeMode],
   );
 
-  // Create a mapping of node IDs to their data
   const nodeDataMap = useMemo(() => {
     const result = new Map<string, GraphNode>();
 
@@ -126,17 +170,14 @@ export const Graph = forwardRef<GraphRef, GraphProps>((props, ref) => {
     return result;
   }, [triplets]);
 
-  // Function to get node color
   const getNodeColor = useCallback(
-    (node: any): string => {
+    (node: NodeDatum | null): string => {
       if (!node) {
         return getNodeColorByLabel(null, themeMode === "dark", labelColorMap);
       }
 
-      // Get the full node data if we only have an ID
       const nodeData = nodeDataMap.get(node.id) ?? node;
 
-      // Extract primaryLabel from node data
       const primaryLabel = nodeData.primaryLabel;
 
       return getNodeColorByLabel(primaryLabel, themeMode === "dark", labelColorMap);
@@ -144,9 +185,8 @@ export const Graph = forwardRef<GraphRef, GraphProps>((props, ref) => {
     [labelColorMap, nodeDataMap, themeMode],
   );
 
-  // Process graph data
   const { nodes, links } = useMemo(() => {
-    const nodes = Array.from(new Set(triplets.flatMap((t) => [t.source.id, t.target.id]))).map((id) => {
+    const nodes: NodeDatum[] = Array.from(new Set(triplets.flatMap((t) => [t.source.id, t.target.id]))).map((id) => {
       const nodeData = triplets.find((t) => t.source.id === id || t.target.id === id);
       const value = nodeData ? (nodeData.source.id === id ? nodeData.source.value : nodeData.target.value) : id;
       return {
@@ -157,7 +197,6 @@ export const Graph = forwardRef<GraphRef, GraphProps>((props, ref) => {
 
     const linkGroups = triplets.reduce(
       (groups, triplet) => {
-        // Skip isolated node edges (they are just placeholders for showing isolated nodes)
         if (triplet.relation.type === "_isolated_node_") {
           return groups;
         }
@@ -182,16 +221,7 @@ export const Graph = forwardRef<GraphRef, GraphProps>((props, ref) => {
 
         return groups;
       },
-      {} as Record<
-        string,
-        {
-          source: string;
-          target: string;
-          relations: string[];
-          relationData: IdValue[];
-          curveStrength: number;
-        }
-      >,
+      {} as Record<string, LinkDatum>,
     );
 
     return {
@@ -200,12 +230,9 @@ export const Graph = forwardRef<GraphRef, GraphProps>((props, ref) => {
     };
   }, [triplets]);
 
-  // Initialize or update visualization - This will run only once on mount
   useEffect(() => {
-    // Skip if already initialized or ref not available
     if (isInitializedRef.current || !svgRef.current) return;
 
-    // Mark as initialized to prevent re-running
     isInitializedRef.current = true;
 
     const svgElement = d3.select<SVGSVGElement, unknown>(svgRef.current);
@@ -213,34 +240,34 @@ export const Graph = forwardRef<GraphRef, GraphProps>((props, ref) => {
 
     const g = svgElement.append("g");
 
-    // Drag handler function
-    const drag = (simulation: d3.Simulation<d3.SimulationNodeDatum, undefined>) => {
+    const drag = (simulation: d3.Simulation<NodeDatum, undefined>) => {
       const originalSettings = {
         velocityDecay: 0.4,
         alphaDecay: 0.05,
       };
 
-      function dragstarted(event: any) {
+      function dragstarted(event: DragEvent) {
         if (!event.active) {
           simulation.velocityDecay(0.7).alphaDecay(0.1).alphaTarget(0.1).restart();
         }
-        d3.select(event.sourceEvent.target.parentNode)
-          .select("circle")
-          .attr("stroke", theme.node.hover)
-          .attr("stroke-width", 3);
+        const target = event.sourceEvent.target as Element;
+        const parentNode = target.closest("g");
+        if (parentNode) {
+          d3.select(parentNode).select("circle").attr("stroke", theme.node.hover).attr("stroke-width", 3);
+        }
 
         event.subject.fx = event.subject.x;
         event.subject.fy = event.subject.y;
       }
 
-      function dragged(event: any) {
+      function dragged(event: DragEvent) {
         event.subject.x = event.x;
         event.subject.y = event.y;
         event.subject.fx = event.x;
         event.subject.fy = event.y;
       }
 
-      function dragended(event: any) {
+      function dragended(event: DragEvent) {
         if (!event.active) {
           simulation
             .velocityDecay(originalSettings.velocityDecay)
@@ -248,43 +275,41 @@ export const Graph = forwardRef<GraphRef, GraphProps>((props, ref) => {
             .alphaTarget(0);
         }
 
-        // Keep the node fixed at its final position
         event.subject.fx = event.x;
         event.subject.fy = event.y;
 
-        d3.select(event.sourceEvent.target.parentNode)
-          .select("circle")
-          .attr("stroke", theme.node.stroke)
-          .attr("stroke-width", 2);
+        const target = event.sourceEvent.target as Element;
+        const parentNode = target.closest("g");
+        if (parentNode) {
+          d3.select(parentNode).select("circle").attr("stroke", theme.node.stroke).attr("stroke-width", 2);
+        }
       }
 
-      return d3.drag<any, any>().on("start", dragstarted).on("drag", dragged).on("end", dragended);
+      return d3.drag<SVGGElement, NodeDatum>().on("start", dragstarted).on("drag", dragged).on("end", dragended);
     };
 
-    // Setup zoom behavior
     const zoom = d3
       .zoom<SVGSVGElement, unknown>()
       .scaleExtent([0.1, 4])
-      .on("zoom", (event) => {
-        g.attr("transform", event.transform);
+      .on("zoom", (event: d3.D3ZoomEvent<SVGSVGElement, unknown>) => {
+        g.attr("transform", event.transform.toString());
       });
 
     zoomRef.current = zoom;
 
-    svgElement.call(zoom).call(zoom.transform, d3.zoomIdentity.scale(0.8));
+    svgElement.call(zoom);
+    svgElement.call((selection) => zoom.transform.call(zoom, selection, d3.zoomIdentity.scale(0.8)));
 
-    // Identify which nodes are isolated (not in any links)
-    const nodeIdSet = new Set(nodes.map((n: any) => n.id));
+    const nodeIdSet = new Set(nodes.map((n: NodeDatum) => n.id));
     const linkedNodeIds = new Set<string>();
 
-    links.forEach((link: any) => {
+    links.forEach((link: LinkDatum) => {
       const sourceId = typeof link.source === "string" ? link.source : link.source.id;
       const targetId = typeof link.target === "string" ? link.target : link.target.id;
       linkedNodeIds.add(sourceId);
       linkedNodeIds.add(targetId);
     });
 
-    // Nodes that don't appear in any link are isolated
     const isolatedNodeIds = new Set<string>();
     nodeIdSet.forEach((nodeId: string) => {
       if (!linkedNodeIds.has(nodeId)) {
@@ -292,14 +317,16 @@ export const Graph = forwardRef<GraphRef, GraphProps>((props, ref) => {
       }
     });
 
-    // Create simulation with custom forces
     const simulation = d3
-      .forceSimulation(nodes as d3.SimulationNodeDatum[])
+      .forceSimulation(nodes as NodeDatum[])
       .force(
         "link",
         d3
-          .forceLink(links)
-          .id((d: any) => d.id)
+          .forceLink(links as d3.SimulationLinkDatum<d3.SimulationNodeDatum>[])
+          .id((d) => {
+            const node = d as d3.SimulationNodeDatum & { id: string };
+            return node.id;
+          })
           .distance(200)
           .strength(0.2),
       )
@@ -307,10 +334,9 @@ export const Graph = forwardRef<GraphRef, GraphProps>((props, ref) => {
         "charge",
         d3
           .forceManyBody()
-          .strength((d: any) => {
-            // Use a less negative strength for isolated nodes
-            // to pull them closer to the center
-            return isolatedNodeIds.has(d.id) ? -500 : -3000;
+          .strength((d) => {
+            const node = d as d3.SimulationNodeDatum & { id: string };
+            return isolatedNodeIds.has(node.id) ? -500 : -3000;
           })
           .distanceMin(20)
           .distanceMax(500)
@@ -318,7 +344,6 @@ export const Graph = forwardRef<GraphRef, GraphProps>((props, ref) => {
       )
       .force("center", d3.forceCenter(width / 2, height / 2).strength(0.05))
       .force("collide", d3.forceCollide().radius(50).strength(0.3).iterations(5))
-      // Add a special gravity force for isolated nodes to pull them toward the center
       .force(
         "isolatedGravity",
         d3
@@ -327,7 +352,10 @@ export const Graph = forwardRef<GraphRef, GraphProps>((props, ref) => {
             width / 2, // center x
             height / 2, // center y
           )
-          .strength((d: any) => (isolatedNodeIds.has(d.id) ? 0.15 : 0.01)),
+          .strength((d) => {
+            const node = d as d3.SimulationNodeDatum & { id: string };
+            return isolatedNodeIds.has(node.id) ? 0.15 : 0.01;
+          }),
       )
       .velocityDecay(0.4)
       .alphaDecay(0.05)
@@ -335,9 +363,8 @@ export const Graph = forwardRef<GraphRef, GraphProps>((props, ref) => {
 
     simulationRef.current = simulation;
 
-    const link = g.append("g").selectAll("g").data(links).join("g");
+    const link = g.append("g").selectAll<SVGGElement, LinkDatum>("g").data(links).join("g");
 
-    // Define reset functions
     resetLinksRef.current = () => {
       link.selectAll("path").attr("stroke", theme.link.stroke).attr("stroke-opacity", 0.6).attr("stroke-width", 1);
 
@@ -346,19 +373,27 @@ export const Graph = forwardRef<GraphRef, GraphProps>((props, ref) => {
       link.selectAll(".link-label text").attr("fill", theme.link.label.text);
     };
 
-    // Create node groups
-    const node = g.append("g").selectAll("g").data(nodes).join("g").call(drag(simulation)).attr("cursor", "pointer");
+    const node = g
+      .append("g")
+      .selectAll<SVGGElement, NodeDatum>("g")
+      .data(nodes)
+      .join("g")
+      .call(
+        drag(simulation) as unknown as (selection: d3.Selection<SVGGElement, NodeDatum, SVGGElement, unknown>) => void,
+      )
+      .attr("cursor", "pointer");
 
     resetNodesRef.current = () => {
       node
         .selectAll("circle")
-        .attr("fill", (d: any) => getNodeColor(d))
+        .attr("fill", function () {
+          return getNodeColor(d3.select(this).datum() as NodeDatum);
+        })
         .attr("stroke", theme.node.stroke)
         .attr("stroke-width", 1);
     };
 
-    // Handle link click
-    handleLinkClickRef.current = (event: any, d: any, relation: IdValue) => {
+    handleLinkClickRef.current = (event: CustomEventWithTarget, d: LinkDatum, relation: IdValue) => {
       if (event.stopPropagation) {
         event.stopPropagation();
       }
@@ -366,87 +401,102 @@ export const Graph = forwardRef<GraphRef, GraphProps>((props, ref) => {
       if (resetLinksRef.current) resetLinksRef.current();
       if (onEdgeClick) onEdgeClick(relation.id);
 
-      // Reset all elements to default state
-
       link.selectAll("path").attr("stroke", theme.link.stroke).attr("stroke-opacity", 0.6).attr("stroke-width", 1);
 
-      // Reset non-highlighted nodes to their proper colors
       node
         .selectAll("circle")
-        .attr("fill", (d: any) => getNodeColor(d))
+        .attr("fill", function () {
+          return getNodeColor(d3.select(this).datum() as NodeDatum);
+        })
         .attr("stroke", theme.node.stroke)
         .attr("stroke-width", 1);
 
-      // Find and highlight the corresponding path and label
       const linkGroup = event.target?.closest("g")
-        ? d3.select(event.target.closest("g"))
-        : link.filter((l: any) => l === d);
+        ? d3.select<Element, unknown>(event.target.closest("g")!)
+        : link.filter((l: LinkDatum) => l === d);
 
-      linkGroup
-        // @ts-ignore
-        .selectAll("path")
-        .attr("stroke", theme.link.selected)
-        .attr("stroke-opacity", 1)
-        .attr("stroke-width", 2);
+      // Use @ts-expect-error for d3.js selection that's difficult to type correctly
+      // @ts-expect-error - d3 selection type incompatibilities
+      const paths = linkGroup.selectAll("path");
+      paths.attr("stroke", theme.link.selected).attr("stroke-opacity", 1).attr("stroke-width", 2);
 
-      // Update label styling
-      // @ts-ignore
-      linkGroup.select(".link-label rect").attr("fill", theme.link.selected);
-      // @ts-ignore
-      linkGroup.select(".link-label text").attr("fill", theme.node.text);
+      // @ts-expect-error - d3 selection type incompatibilities
+      const labelRects = linkGroup.selectAll(".link-label rect");
+      const labelRectNode = labelRects.node();
+      if (labelRectNode) {
+        labelRects.attr("fill", theme.link.selected);
+      }
 
-      // Highlight connected nodes
-      node
-        .selectAll("circle")
-        .filter((n: any) => n.id === d.source.id || n.id === d.target.id)
-        .attr("fill", theme.node.selected)
-        .attr("stroke", theme.node.selected)
-        .attr("stroke-width", 2);
+      // @ts-expect-error - d3 selection type incompatibilities
+      const labelTexts = linkGroup.selectAll(".link-label text");
+      const labelTextNode = labelTexts.node();
+      if (labelTextNode) {
+        labelTexts.attr("fill", theme.node.text);
+      }
+
+      node.selectAll("circle").each(function () {
+        const nodeData = d3.select(this).datum() as NodeDatum;
+        const sourceId = getNodeId(d.source);
+        const targetId = getNodeId(d.target);
+
+        if (nodeData.id === sourceId || nodeData.id === targetId) {
+          d3.select(this).attr("fill", theme.node.selected).attr("stroke", theme.node.selected).attr("stroke-width", 2);
+        }
+      });
 
       const sourceNode = d.source;
       const targetNode = d.target;
 
-      // Calculate bounding box for the two connected nodes and the edge
-      if (sourceNode && targetNode && sourceNode.x !== undefined && targetNode.x !== undefined) {
-        const padding = 100; // Increased padding for better view
-        const minX = Math.min(sourceNode.x, targetNode.x) - padding;
-        const minY = Math.min(sourceNode.y, targetNode.y) - padding;
-        const maxX = Math.max(sourceNode.x, targetNode.x) + padding;
-        const maxY = Math.max(sourceNode.y, targetNode.y) + padding;
+      const sourceX = getNodeX(sourceNode);
+      const sourceY = getNodeY(sourceNode);
+      const targetX = getNodeX(targetNode);
+      const targetY = getNodeY(targetNode);
 
-        // Calculate transform to fit the connected nodes
+      if (
+        sourceX !== undefined &&
+        sourceY !== undefined &&
+        targetX !== undefined &&
+        targetY !== undefined &&
+        zoomRef.current
+      ) {
+        const padding = 100;
+        const minX = Math.min(sourceX, targetX) - padding;
+        const minY = Math.min(sourceY, targetY) - padding;
+        const maxX = Math.max(sourceX, targetX) + padding;
+        const maxY = Math.max(sourceY, targetY) + padding;
+
         const boundWidth = maxX - minX;
         const boundHeight = maxY - minY;
         const scale = 0.9 * Math.min(width / boundWidth, height / boundHeight);
         const midX = (minX + maxX) / 2;
         const midY = (minY + maxY) / 2;
 
-        if (isFinite(scale) && isFinite(midX) && isFinite(midY) && zoomRef.current) {
+        if (isFinite(scale) && isFinite(midX) && isFinite(midY)) {
           const transform = d3.zoomIdentity.translate(width / 2 - midX * scale, height / 2 - midY * scale).scale(scale);
 
-          // Animate transition to new view
-          // @ts-ignore
           svgElement
             .transition()
             .duration(750)
-            .ease(d3.easeCubicInOut) // Add easing for smoother transitions
-            .call(zoomRef.current.transform, transform);
+            .ease(d3.easeCubicInOut)
+            .call(zoomRef.current.transform.bind(zoomRef.current), transform);
         }
       }
     };
 
-    // Create links with proper curve paths
-    link.each(function (d: any) {
-      const linkGroup = d3.select(this);
+    link.each(function (this: SVGGElement, d: LinkDatum) {
+      const linkGroup = d3.select<SVGGElement, LinkDatum>(this);
       const relationCount = d.relations.length;
 
-      // Calculate curve strengths based on number of relations
       const baseStrength = 0.2;
       const strengthStep = relationCount > 1 ? baseStrength / (relationCount - 1) : 0;
 
       d.relations.forEach((relation: string, index: number) => {
         const curveStrength = relationCount > 1 ? -baseStrength + index * strengthStep * 2 : 0;
         const fullRelation = d.relationData[index];
+
+        if (!fullRelation) {
+          return;
+        }
 
         linkGroup
           .append("path")
@@ -460,7 +510,7 @@ export const Graph = forwardRef<GraphRef, GraphProps>((props, ref) => {
           .attr("data-target", typeof d.target === "object" ? d.target.id : d.target)
           .on("click", (event) => {
             if (handleLinkClickRef.current) {
-              handleLinkClickRef.current(event, d, fullRelation);
+              handleLinkClickRef.current(event as unknown as CustomEventWithTarget, d, fullRelation);
             }
           });
 
@@ -471,7 +521,7 @@ export const Graph = forwardRef<GraphRef, GraphProps>((props, ref) => {
           .attr("data-curve-strength", curveStrength)
           .on("click", (event) => {
             if (handleLinkClickRef.current) {
-              handleLinkClickRef.current(event, d, fullRelation);
+              handleLinkClickRef.current(event as unknown as CustomEventWithTarget, d, fullRelation);
             }
           });
 
@@ -490,18 +540,16 @@ export const Graph = forwardRef<GraphRef, GraphProps>((props, ref) => {
       });
     });
 
-    // Create node circles
     node
       .append("circle")
       .attr("r", 10)
-      .attr("fill", (d: any) => getNodeColor(d))
+      .attr("fill", (d: NodeDatum) => getNodeColor(d))
       .attr("stroke", theme.node.stroke)
       .attr("stroke-width", 1)
       .attr("filter", "drop-shadow(0 2px 4px rgba(0,0,0,0.2))")
-      .attr("data-id", (d: any) => d.id)
+      .attr("data-id", (d: NodeDatum) => d.id)
       .attr("cursor", "pointer");
 
-    // Add node labels
     node
       .append("text")
       .attr("x", 15)
@@ -510,40 +558,36 @@ export const Graph = forwardRef<GraphRef, GraphProps>((props, ref) => {
       .attr("fill", theme.node.text)
       .attr("font-weight", "500")
       .attr("font-size", "12px")
-      .text((d: any) => d.value)
+      .text((d: NodeDatum) => d.value)
       .attr("cursor", "pointer");
 
-    // Handle node clicks
-    function handleNodeClick(event: any, d: any) {
-      event.stopPropagation(); // Ensure the event doesn't bubble up
+    function handleNodeClick(event: MouseEvent, d: NodeDatum) {
+      event.stopPropagation();
 
       if (resetLinksRef.current) resetLinksRef.current();
       if (resetNodesRef.current) resetNodesRef.current();
 
-      const selectedNodeId = d?.id;
+      const selectedNodeId = d.id;
 
       if (selectedNodeId && onNodeClick) {
         onNodeClick(selectedNodeId);
 
-        // Find connected nodes and links
-        const connectedLinks: any[] = [];
-        const connectedNodes = new Set<any>();
+        const connectedLinks: { source: NodeDatum; target: NodeDatum }[] = [];
+        const connectedNodes = new Set<NodeDatum>();
 
-        // Add the selected node to the connected nodes
-        const selectedNode = nodes.find((n: any) => n.id === selectedNodeId);
+        const selectedNode = nodes.find((n: NodeDatum) => n.id === selectedNodeId);
         if (selectedNode) {
           connectedNodes.add(selectedNode);
         }
 
-        // @ts-ignore
         link.selectAll("path").each(function () {
           const path = d3.select(this);
           const source = path.attr("data-source");
           const target = path.attr("data-target");
 
           if (source === selectedNodeId || target === selectedNodeId) {
-            const sourceNode = nodes.find((n: any) => n.id === source);
-            const targetNode = nodes.find((n: any) => n.id === target);
+            const sourceNode = nodes.find((n: NodeDatum) => n.id === source);
+            const targetNode = nodes.find((n: NodeDatum) => n.id === target);
 
             if (sourceNode && targetNode) {
               connectedLinks.push({ source: sourceNode, target: targetNode });
@@ -553,14 +597,13 @@ export const Graph = forwardRef<GraphRef, GraphProps>((props, ref) => {
           }
         });
 
-        // Calculate bounding box of connected nodes
         if (connectedNodes.size > 0 && zoomRef.current) {
           let minX = Infinity,
             minY = Infinity;
           let maxX = -Infinity,
             maxY = -Infinity;
 
-          connectedNodes.forEach((node: any) => {
+          connectedNodes.forEach((node: NodeDatum) => {
             if (node.x !== undefined && node.y !== undefined) {
               minX = Math.min(minX, node.x);
               minY = Math.min(minY, node.y);
@@ -569,14 +612,12 @@ export const Graph = forwardRef<GraphRef, GraphProps>((props, ref) => {
             }
           });
 
-          // Add padding
           const padding = 50;
           minX -= padding;
           minY -= padding;
           maxX += padding;
           maxY += padding;
 
-          // Calculate transform to fit connected nodes
           const boundWidth = maxX - minX;
           const boundHeight = maxY - minY;
           const scale = 0.9 * Math.min(width / boundWidth, height / boundHeight);
@@ -588,27 +629,21 @@ export const Graph = forwardRef<GraphRef, GraphProps>((props, ref) => {
               .translate(width / 2 - midX * scale, height / 2 - midY * scale)
               .scale(scale);
 
-            // Animate transition to new view
-            // @ts-ignore
             svgElement
               .transition()
               .duration(750)
-              .ease(d3.easeCubicInOut) // Add easing for smoother transitions
-              .call(zoomRef.current.transform, transform);
+              .ease(d3.easeCubicInOut)
+              .call(zoomRef.current.transform.bind(zoomRef.current), transform);
           }
         }
       }
     }
 
-    // Attach click handler to nodes
-    node.on("click", handleNodeClick);
+    node.on("click", handleNodeClick as unknown as (this: SVGGElement, event: MouseEvent, d: NodeDatum) => void);
 
-    // Store a reference to the current SVG element
     const svgRefCurrent = svgRef.current;
 
-    // Add blur handler
-    svgElement.on("click", function (event) {
-      // Make sure we only handle clicks directly on the SVG element, not on its children
+    svgElement.on("click", function (this: SVGSVGElement, event: MouseEvent) {
       if (event.target === svgRefCurrent) {
         if (onBlur) onBlur();
         if (resetLinksRef.current) resetLinksRef.current();
@@ -616,130 +651,110 @@ export const Graph = forwardRef<GraphRef, GraphProps>((props, ref) => {
       }
     });
 
-    // Update positions on simulation tick
     simulation.on("tick", () => {
-      // Update link paths and labels
-      link.each(function (d: any) {
-        // Make sure d.source and d.target have x and y properties
-        if (!d.source.x && typeof d.source === "string") {
-          const sourceNode = nodes.find((n: any) => n.id === d.source);
-          // @ts-ignore - Node will have x,y properties from d3 simulation
-          if (sourceNode?.x) {
+      link.each(function (this: SVGGElement, d: LinkDatum) {
+        if (typeof d.source === "string" || !d.source.x) {
+          const sourceNode = nodes.find(
+            (n: NodeDatum) => n.id === (typeof d.source === "string" ? d.source : d.source.id),
+          );
+          if (sourceNode) {
             d.source = sourceNode;
           }
         }
 
-        if (!d.target.x && typeof d.target === "string") {
-          const targetNode = nodes.find((n: any) => n.id === d.target);
-          // @ts-ignore - Node will have x,y properties from d3 simulation
-          if (targetNode?.x) {
+        if (typeof d.target === "string" || !d.target.x) {
+          const targetNode = nodes.find(
+            (n: NodeDatum) => n.id === (typeof d.target === "string" ? d.target : d.target.id),
+          );
+          if (targetNode) {
             d.target = targetNode;
           }
         }
 
-        const linkGroup = d3.select(this);
-        linkGroup.selectAll("path").each(function () {
+        const linkGroup = d3.select<SVGGElement, LinkDatum>(this);
+        linkGroup.selectAll<SVGPathElement, unknown>("path").each(function (this: SVGPathElement) {
           const path = d3.select(this);
           const curveStrength = +path.attr("data-curve-strength") || 0;
 
-          // Handle self-referencing nodes
-          if (d.source.id === d.target.id) {
-            // Create an elliptical path for self-references
+          const source = d.source as NodeDatum;
+          const target = d.target as NodeDatum;
+
+          if (source.id === target.id && source.x !== undefined && source.y !== undefined) {
             const radiusX = 40;
             const radiusY = 90;
             const offset = radiusY + 20;
 
-            const cx = d.source.x;
-            const cy = d.source.y - offset;
-            const path_d = `M${d.source.x},${d.source.y} 
+            const cx = source.x;
+            const cy = source.y - offset;
+            const path_d = `M${source.x},${source.y} 
               C${cx - radiusX},${cy} 
                ${cx + radiusX},${cy} 
-               ${d.source.x},${d.source.y}`;
+               ${source.x},${source.y}`;
             path.attr("d", path_d);
 
-            // Position the label
-            // @ts-ignore
-            const labelGroup = linkGroup.selectAll(".link-label").filter(function () {
-              return d3.select(this).attr("data-curve-strength") === String(curveStrength);
-            });
+            const pathNode = path.node()! as SVGPathElement;
 
-            // Update both the group position and the rectangle/text within it
-            labelGroup.attr("transform", `translate(${cx}, ${cy - 10})`);
+            if (pathNode) {
+              const pathLength = pathNode.getTotalLength();
+              const midPoint = pathNode.getPointAtLength(pathLength / 2);
 
-            // Update the rectangle and text positioning
-            // @ts-ignore
-            const text = labelGroup.select("text");
-            // @ts-ignore
-            const rect = labelGroup.select("rect");
-            const textBBox = (text.node() as SVGTextElement)?.getBBox();
+              const labelGroup = linkGroup.selectAll<SVGGElement, unknown>(".link-label").filter(function (
+                this: SVGGElement,
+              ) {
+                return d3.select(this).attr("data-curve-strength") === String(curveStrength);
+              });
 
-            if (textBBox) {
-              rect
-                .attr("x", -textBBox.width / 2 - 6)
-                .attr("y", -textBBox.height / 2 - 4)
-                .attr("width", textBBox.width + 12)
-                .attr("height", textBBox.height + 8);
+              if (midPoint) {
+                const text = labelGroup.select<SVGTextElement>("text");
+                const rect = labelGroup.select<SVGRectElement>("rect");
 
-              text.attr("x", 0).attr("y", 0);
+                if (text.node() && rect.node()) {
+                  const textBBox = text.node()?.getBBox();
+
+                  if (textBBox) {
+                    const angle = (Math.atan2(target.y ?? 0 - source.y, target.x ?? 0 - source.x) * 180) / Math.PI;
+                    const rotationAngle = angle > 90 || angle < -90 ? angle - 180 : angle;
+
+                    labelGroup.attr("transform", `translate(${midPoint.x}, ${midPoint.y}) rotate(${rotationAngle})`);
+
+                    rect
+                      .attr("x", -textBBox.width / 2 - 6)
+                      .attr("y", -textBBox.height / 2 - 4)
+                      .attr("width", textBBox.width + 12)
+                      .attr("height", textBBox.height + 8);
+
+                    text.attr("x", 0).attr("y", 0);
+                  }
+                }
+              }
             }
-          } else {
-            const dx = d.target.x - d.source.x;
-            const dy = d.target.y - d.source.y;
+          } else if (
+            source.x !== undefined &&
+            source.y !== undefined &&
+            target.x !== undefined &&
+            target.y !== undefined
+          ) {
+            const dx = target.x - source.x;
+            const dy = target.y - source.y;
             const dr = Math.sqrt(dx * dx + dy * dy);
 
-            const midX = (d.source.x + d.target.x) / 2;
-            const midY = (d.source.y + d.target.y) / 2;
+            const midX = (source.x + target.x) / 2;
+            const midY = (source.y + target.y) / 2;
             const normalX = -dy / dr;
             const normalY = dx / dr;
             const curveMagnitude = dr * curveStrength;
             const controlX = midX + normalX * curveMagnitude;
             const controlY = midY + normalY * curveMagnitude;
 
-            const path_d = `M${d.source.x},${d.source.y} Q${controlX},${controlY} ${d.target.x},${d.target.y}`;
+            const path_d = `M${source.x},${source.y} Q${controlX},${controlY} ${target.x},${target.y}`;
             path.attr("d", path_d);
-
-            const pathNode = path.node() as SVGPathElement;
-            if (pathNode) {
-              const pathLength = pathNode.getTotalLength();
-              const midPoint = pathNode.getPointAtLength(pathLength / 2);
-
-              // @ts-ignore - Intentionally ignoring d3 selection type issues as in the Svelte version
-              const labelGroup = linkGroup.selectAll(".link-label").filter(function () {
-                return d3.select(this).attr("data-curve-strength") === String(curveStrength);
-              });
-
-              if (midPoint) {
-                // @ts-ignore - Intentionally ignoring d3 selection type issues as in the Svelte version
-                const text = labelGroup.select("text");
-                // @ts-ignore - Intentionally ignoring d3 selection type issues as in the Svelte version
-                const rect = labelGroup.select("rect");
-                const textBBox = (text.node() as SVGTextElement)?.getBBox();
-
-                if (textBBox) {
-                  const angle = (Math.atan2(d.target.y - d.source.y, d.target.x - d.source.x) * 180) / Math.PI;
-                  const rotationAngle = angle > 90 || angle < -90 ? angle - 180 : angle;
-
-                  labelGroup.attr("transform", `translate(${midPoint.x}, ${midPoint.y}) rotate(${rotationAngle})`);
-
-                  rect
-                    .attr("x", -textBBox.width / 2 - 6)
-                    .attr("y", -textBBox.height / 2 - 4)
-                    .attr("width", textBBox.width + 12)
-                    .attr("height", textBBox.height + 8);
-
-                  text.attr("x", 0).attr("y", 0);
-                }
-              }
-            }
           }
         });
       });
 
-      // Update node positions
-      node.attr("transform", (d: any) => `translate(${d.x},${d.y})`);
+      node.attr("transform", (d: NodeDatum) => `translate(${d.x ?? 0},${d.y ?? 0})`);
     });
 
-    // Handle zoom-to-fit on mount
     let hasInitialized = false;
 
     simulation.on("end", () => {
@@ -753,88 +768,66 @@ export const Graph = forwardRef<GraphRef, GraphProps>((props, ref) => {
         const currentWidth = bounds.width || 1;
         const currentHeight = bounds.height || 1;
 
-        // Only proceed if we have valid dimensions
         if (currentWidth > 0 && currentHeight > 0 && fullWidth > 0 && fullHeight > 0) {
           const midX = bounds.x + currentWidth / 2;
           const midY = bounds.y + currentHeight / 2;
 
-          // Calculate scale to fit with padding
           const scale = 0.8 * Math.min(fullWidth / currentWidth, fullHeight / currentHeight);
 
-          // Ensure we have valid numbers before creating transform
           if (isFinite(midX) && isFinite(midY) && isFinite(scale)) {
             const transform = d3.zoomIdentity
               .translate(fullWidth / 2 - midX * scale, fullHeight / 2 - midY * scale)
               .scale(scale);
 
-            // Smoothly animate to the new transform
-            // @ts-ignore
             svgElement
               .transition()
               .duration(750)
-              .ease(d3.easeCubicInOut) // Add easing for smoother transitions
-              .call(zoomRef.current.transform, transform);
+              .ease(d3.easeCubicInOut)
+              .call(zoomRef.current.transform.bind(zoomRef.current), transform);
           } else {
             console.warn("Invalid transform values:", { midX, midY, scale });
-            // Fallback to a simple center transform
+
             const transform = d3.zoomIdentity.translate(fullWidth / 2, fullHeight / 2).scale(0.8);
-            svgElement.call(zoomRef.current.transform, transform);
+
+            svgElement.call(zoomRef.current.transform.bind(zoomRef.current), transform);
           }
         }
       }
     });
 
-    // Cleanup function - only called when component unmounts
     return () => {
       simulation.stop();
-      // Save the ref to a variable before using it in cleanup
       const currentSvgRef = svgRef.current;
       if (currentSvgRef) {
         d3.select(currentSvgRef).on("click", null);
       }
       isInitializedRef.current = false;
     };
-    // We're keeping the dependency array empty to ensure initialization runs only once on mount
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // This effect updates the graph theme colors when the theme changes
   useEffect(() => {
-    // Skip if not initialized
     if (!svgRef.current || !isInitializedRef.current) return;
 
-    const svgElement = d3.select(svgRef.current);
+    const svgElement = d3.select<SVGSVGElement, unknown>(svgRef.current);
 
-    // Update background
     svgElement.style("background-color", theme.background);
 
-    // Update nodes - use getNodeColor for proper color assignment
     svgElement
-      .selectAll("circle")
-      .attr("fill", (d: any) => getNodeColor(d))
+      .selectAll<SVGCircleElement, NodeDatum>("circle")
+      .attr("fill", (d: NodeDatum) => getNodeColor(d))
       .attr("stroke", theme.node.stroke);
 
-    // Update node labels
-    // @ts-ignore
-    svgElement.selectAll("text").attr("fill", theme.node.text);
+    svgElement.selectAll<SVGTextElement, unknown>("text").attr("fill", theme.node.text);
 
-    // Update links
-    // @ts-ignore
-    svgElement.selectAll("path").attr("stroke", theme.link.stroke).attr("stroke-opacity", 0.6);
+    svgElement.selectAll<SVGPathElement, unknown>("path").attr("stroke", theme.link.stroke).attr("stroke-opacity", 0.6);
 
-    // Update selected links if any
-    // @ts-ignore
-    svgElement.selectAll("path.selected").attr("stroke", theme.link.selected).attr("stroke-opacity", 1);
+    svgElement
+      .selectAll<SVGPathElement, unknown>("path.selected")
+      .attr("stroke", theme.link.selected)
+      .attr("stroke-opacity", 1);
 
-    // Update link labels
-    // @ts-ignore
-    svgElement.selectAll(".link-label rect").attr("fill", theme.link.label.bg);
-    // @ts-ignore
-    svgElement.selectAll(".link-label text").attr("fill", theme.link.label.text);
-
-    // This effect has many dependencies that would cause frequent re-renders
-    // We're disabling the exhaustive deps rule to prevent unnecessary re-renders
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    svgElement.selectAll<SVGRectElement, unknown>(".link-label rect").attr("fill", theme.link.label.bg);
+    svgElement.selectAll<SVGTextElement, unknown>(".link-label text").attr("fill", theme.link.label.text);
   }, [themeMode]);
 
   return (
@@ -853,3 +846,5 @@ export const Graph = forwardRef<GraphRef, GraphProps>((props, ref) => {
     />
   );
 });
+
+Graph.displayName = "Graph";
