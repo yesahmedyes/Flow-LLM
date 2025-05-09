@@ -94,9 +94,9 @@ export default function FileCard({ file }: { file: FileData }) {
 
   return (
     <div key={file.id} className="border rounded-lg p-4 flex flex-col">
-      <div className="flex items-center mb-2 w-full justify-between">
+      <div className="flex items-center pb-2 w-full justify-between">
         <FileIcon type={file.fileType} />
-        <span className="ml-2 truncate">{file.fileName}</span>
+        <span className="ml-2 truncate text-sm">{file.fileName}</span>
         <Popover>
           <PopoverTrigger>
             <EllipsisVertical

@@ -74,7 +74,7 @@ export default function ModelsPage() {
     <div className="w-full h-screen overflow-y-auto">
       <div className="max-w-9/12 mx-auto py-20">
         <Input
-          className="mb-5 h-11"
+          className="mb-4 h-11"
           type="search"
           placeholder="Search models..."
           value={searchQuery}
@@ -101,7 +101,7 @@ export default function ModelsPage() {
                 <Badge variant="outline">{model.architecture.modality}</Badge>
                 <Heart
                   size={20}
-                  className={`${preferredModels.some((m) => m.id === model.id) ? "fill-foreground stroke-foreground" : "stroke-muted-foreground"}`}
+                  className={`${preferredModels.some((m) => m.id === model.id) ? "fill-foreground/80 dark:fill-foreground stroke-foreground/80 dark:stroke-foreground" : "stroke-muted-foreground"}`}
                   onClick={(e) => togglePreferred(e, model.id)}
                 />
               </CardFooter>

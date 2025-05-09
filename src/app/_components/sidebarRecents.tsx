@@ -145,7 +145,7 @@ export default function SidebarRecents() {
           return (
             <div
               className={`cursor-pointer text-sm flex flex-row justify-between items-center font-light text-accent-foreground ${
-                isSelected ? "bg-accent/50" : "hover:bg-accent/50"
+                isSelected ? "bg-accent dark:bg-accent/50" : "hover:bg-accent/50 dark:hover:bg-accent/50"
               } rounded-lg`}
               key={chat.id}
               onMouseEnter={() => setHoveredChatId(chat.id)}
@@ -173,7 +173,13 @@ export default function SidebarRecents() {
                   </div>
                 </div>
               ) : (
-                <span className="truncate w-full px-4 py-3">{chat.name}</span>
+                <span
+                  className={`truncate w-full px-4 py-3 text-foreground/80 font-normal dark:text-foreground dark:font-light ${
+                    isSelected && "text-foreground/100"
+                  }`}
+                >
+                  {chat.name}
+                </span>
               )}
               {!editChatId && hoveredChatId === chat.id && (
                 <>
@@ -183,7 +189,7 @@ export default function SidebarRecents() {
                       onEditChat(chat.id, chat.name);
                     }}
                     size={18}
-                    className="stroke-foreground ml-3 mr-3"
+                    className="stroke-foreground/50 dark:stroke-foreground/80 ml-3 mr-2"
                   />
                   <Trash
                     onClick={(e) => {
@@ -191,7 +197,7 @@ export default function SidebarRecents() {
                       handleDeleteChat(chat.id);
                     }}
                     size={18}
-                    className="stroke-foreground mr-3"
+                    className="stroke-foreground/50 dark:stroke-foreground/80 mr-3"
                   />
                 </>
               )}

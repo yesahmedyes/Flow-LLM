@@ -29,6 +29,9 @@ export default function ChatInterface({ id, initialMessages }: ChatInterfaceProp
     id: id as string,
     initialMessages: initialMessages,
     sendExtraMessageFields: true,
+    onFinish: (message, options) => {
+      console.log("message", messages);
+    },
   });
 
   const handleSubmit = useCallback(
@@ -52,21 +55,15 @@ export default function ChatInterface({ id, initialMessages }: ChatInterfaceProp
   const updateChatName = useChatsStore((state) => state.updateChatName);
 
   useEffect(() => {
-    if (messages) {
-      console.log("messages", messages);
+    if (messages.length === 1 && initialMessageCount.current === 0) {
+      updateChatName(id as string, messages[0]!.content as string);
     }
-  }, [messages]);
 
-  useEffect(() => {
     // Only update the chat if messages have actually changed (new messages added)
     if (messages.length > 0 && messages.length !== initialMessageCount.current) {
       updateChatById(id as string, messages as Message[], user!.id as string);
 
       initialMessageCount.current = messages.length;
-    }
-
-    if (messages.length === 1 && initialMessageCount.current === 0) {
-      updateChatName(id as string, messages[0]!.content as string);
     }
   }, [messages, id, updateChatById, updateChatName, user]);
 

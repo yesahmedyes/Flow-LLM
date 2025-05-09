@@ -55,7 +55,9 @@ function MarkdownBlock({ content }: { content: string }) {
 
           if (isShortCode && !match?.[1]) {
             return (
-              <span className="px-2 py-1 rounded bg-muted text-white font-normal text-sm w-min">{codeString}</span>
+              <span className="px-2 py-1 rounded bg-muted text-foreground/80 font-normal text-sm w-min">
+                {codeString}
+              </span>
             );
           }
 

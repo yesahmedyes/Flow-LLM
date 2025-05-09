@@ -8,7 +8,7 @@ interface CustomLoaderProps {
 export default function CustomLoader({ className }: CustomLoaderProps) {
   return (
     <div className={cn("flex flex-col place-items-center justify-center h-full pb-20", className)}>
-      <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      <Loader2 className="h-8 w-8 animate-spin text-foreground/80 dark:text-muted-background" />
     </div>
   );
 }

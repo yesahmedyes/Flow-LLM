@@ -4,10 +4,8 @@
 
 # UI & Other Improvements
 
-- [ ] Fix colors and shadows for light mode
 - [ ] On Page Load, show top bar more smoothly
 - [ ] Add support for latex equations in markdown
-- [ ] Option to extend chat box to full height
 - [ ] Make the stop button softer (transition on hover)
 - [ ] Add ability to upload Image and File Attachments in chat
 - [ ] Show reasoning, sources, and errors in response

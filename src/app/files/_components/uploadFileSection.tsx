@@ -3,6 +3,7 @@ import { UploadArea } from "./uploadArea";
 import { api } from "~/trpc/react";
 import { DocumentUpload } from "iconsax-react";
 import { toast } from "sonner";
+import { Button } from "~/app/_components/ui/button";
 
 export default function UploadFileSection() {
   const utils = api.useUtils();
@@ -88,8 +89,8 @@ export default function UploadFileSection() {
       <h2 className="text-xl font-semibold mb-4">Upload Files</h2>
       <div
         {...getRootProps()}
-        className={`rounded-xl h-64 px-8 place-content-center w-full border border-dashed cursor-pointer bg-background ${
-          isDragActive ? "border-border" : "border-muted"
+        className={`rounded-xl h-60 px-8 place-content-center w-full border border-dashed cursor-pointer bg-background ${
+          isDragActive ? "border-foreground/50" : "border-border"
         }`}
       >
         <input {...getInputProps()} />
@@ -106,12 +107,12 @@ export default function UploadFileSection() {
                   ? "Dropped files will be automatically uploaded"
                   : "Drop files here, or click to select files"}
               </p>
-              <p className="text-muted-foreground pt-3 pb-6 text-sm">
+              <p className="text-muted-foreground pt-2 pb-6 text-sm">
                 Supports images, PDFs, and text files up to 16MB
               </p>
-              <button className="bg-secondary text-secondary-foreground shadow-xs hover:bg-secondary/80 px-4 py-2 rounded-md">
+              <Button variant="secondary" className="mt-1 font-normal">
                 Select Files
-              </button>
+              </Button>
             </>
           )}
         </div>

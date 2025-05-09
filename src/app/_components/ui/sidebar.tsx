@@ -4,7 +4,7 @@
 import * as React from "react";
 import { Slot } from "@radix-ui/react-slot";
 import { type VariantProps, cva } from "class-variance-authority";
-import { Menu, HambergerMenu } from "iconsax-react";
+import { HambergerMenu } from "iconsax-react";
 
 import { useIsMobile } from "~/hooks/use-mobile";
 import { cn } from "~/lib/utils";
@@ -382,7 +382,7 @@ function SidebarGroupLabel({
       data-slot="sidebar-group-label"
       data-sidebar="group-label"
       className={cn(
-        "text-muted-foreground font-normal ring-sidebar-ring flex shrink-0 items-center rounded-md px-4 text-base outline-hidden transition-[margin,opacity] duration-200 ease-linear focus-visible:ring-2 [&>svg]:size-4 [&>svg]:shrink-0",
+        "text-muted-foreground font-normal text-sm ring-sidebar-ring flex shrink-0 items-center rounded-md px-4 outline-hidden transition-[margin,opacity] duration-200 ease-linear focus-visible:ring-2 [&>svg]:size-4 [&>svg]:shrink-0",
         "group-data-[collapsible=icon]:-mt-8 group-data-[collapsible=icon]:opacity-0",
         className,
       )}

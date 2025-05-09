@@ -81,14 +81,14 @@ function CustomSidebar({ userId }: { userId: string }) {
       <Sidebar>
         <SidebarHeader className="px-4 pb-6 pt-8">
           <Button variant="outline" className="rounded-full" size="lg" onClick={onNewChat}>
-            <div className="flex flex-row items-center justify-center gap-2">
+            <div className="flex flex-row items-center justify-center gap-2 font-normal">
               <Plus size={20} /> New Chat
             </div>
           </Button>
         </SidebarHeader>
         <SidebarContent>
           <SidebarGroup>
-            <SidebarGroupLabel className="pb-2.5 px-4">Recents</SidebarGroupLabel>
+            <SidebarGroupLabel className="pb-2 px-5 mx-0.5">Recents</SidebarGroupLabel>
             <SidebarRecents />
           </SidebarGroup>
         </SidebarContent>
@@ -97,34 +97,37 @@ function CustomSidebar({ userId }: { userId: string }) {
             <Link href="/files">
               <Button
                 variant="ghost"
-                className="justify-start w-full flex flex-row items-center gap-3"
+                className="justify-start w-full flex flex-row items-center gap-2.5"
                 size="lg"
                 key="files-button"
                 onClick={handleSidebarClose}
               >
-                <File className="stroke-muted-foreground" /> Files
+                <File className="stroke-muted-foreground scale-110" />
+                <span className="text-foreground/80 dark:text-foreground">Files</span>
               </Button>
             </Link>
             <Link href="/memories">
               <Button
                 variant="ghost"
-                className="justify-start w-full flex flex-row items-center gap-3"
+                className="justify-start w-full flex flex-row items-center gap-2.5"
                 size="lg"
                 key="memories-button"
                 onClick={handleSidebarClose}
               >
-                <Story className="stroke-muted-foreground" /> Memories
+                <Story className="stroke-muted-foreground scale-110" />
+                <span className="text-foreground/80 dark:text-foreground">Memories</span>
               </Button>
             </Link>
             <Link href="/models">
               <Button
                 variant="ghost"
-                className="justify-start w-full flex flex-row items-center gap-3"
+                className="justify-start w-full flex flex-row items-center gap-2.5"
                 size="lg"
                 key="models-button"
                 onClick={handleSidebarClose}
               >
-                <Thorchain className="stroke-muted-foreground" /> Models
+                <Thorchain className="stroke-muted-foreground scale-110" />
+                <span className="text-foreground/80 dark:text-foreground">Models</span>
               </Button>
             </Link>
           </div>

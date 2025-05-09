@@ -47,7 +47,7 @@ export default function FullChat({ messages, isLoading }: FullChatProps) {
           if (message.role === "user") {
             return (
               <div key={message.id} className={`flex justify-end`}>
-                <div className="max-w-3xl rounded-2xl px-5 py-3 leading-relaxed bg-muted text-white whitespace-pre-wrap">
+                <div className="max-w-3xl rounded-2xl px-5 py-3 leading-relaxed bg-muted text-foreground font-light dark:font-normal whitespace-pre-wrap">
                   {message.content}
                 </div>
               </div>
@@ -65,7 +65,10 @@ export default function FullChat({ messages, isLoading }: FullChatProps) {
                             const annotationObject = annotation as { type: string; value: string };
 
                             return (
-                              <div className="text-sm text-muted-foreground font-light" key={index}>
+                              <div
+                                className="text-sm text-foreground/80 dark:text-muted-foreground font-light"
+                                key={index}
+                              >
                                 {annotationObject.value}
                               </div>
                             );
@@ -77,11 +80,11 @@ export default function FullChat({ messages, isLoading }: FullChatProps) {
                 )}
 
                 {message.parts && message.parts.length > 0 && (
-                  <div className="prose dark:prose-invert max-w-none">
+                  <div className="prose dark:prose-invert max-w-none text-foreground/70 dark:text-foreground/85">
                     {message.parts?.map((part, index) => {
                       if (part.type === "reasoning") {
                         return (
-                          <div className="text-sm text-muted-foreground" key={index}>
+                          <div className="text-sm text-foreground/80 dark:text-muted-foreground" key={index}>
                             {part.reasoning}
                           </div>
                         );
