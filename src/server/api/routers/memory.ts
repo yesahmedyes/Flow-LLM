@@ -4,7 +4,6 @@ import type { EntityEdge } from "@getzep/zep-cloud/api/types/EntityEdge";
 import { z } from "zod";
 import type { Edge, Node } from "~/lib/types/graph";
 import { createTriplets } from "~/lib/utils/graph";
-
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import zep from "~/server/init/zep";
 
@@ -19,7 +18,7 @@ export const memoryRouter = createTRPCRouter({
       const { user } = ctx;
 
       await zep.graph.add({
-        data: "The user has a new memory: " + input.memory,
+        data: "User has a new memory: " + input.memory,
         type: "text",
         userId: user.id,
       });
@@ -38,6 +37,19 @@ export const memoryRouter = createTRPCRouter({
 
     return { triplets };
   }),
+  deleteEpisode: protectedProcedure
+    .input(
+      z.object({
+        episodeIds: z.array(z.string()),
+      }),
+    )
+    .mutation(async ({ input }) => {
+      console.log("deleting episodes", input.episodeIds);
+
+      const deleted = await Promise.all(input.episodeIds.map((episodeId) => zep.graph.episode.delete(episodeId)));
+
+      console.log("deleted", deleted);
+    }),
 });
 
 const NODE_BATCH_SIZE = 100;

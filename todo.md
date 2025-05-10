@@ -11,6 +11,8 @@
 - [ ] Show reasoning, sources, and errors in response
 - [ ] Ability to edit last sent message and resend
 - [ ] Ability to scroll up while message is streaming
+- [ ] User should be able to delete nodes and edges in the graph
+- [ ] Upload images in Agent pipeline
 
 # Architecture
 

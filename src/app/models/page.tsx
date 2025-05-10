@@ -53,17 +53,15 @@ export default function ModelsPage() {
   const togglePreferred = (e: React.MouseEvent, modelId: string) => {
     e.stopPropagation();
 
-    const model = allModels.find((model) => model.id === modelId);
+    console.log("togglePreferred", modelId);
 
-    if (!model) return;
-
-    if (preferredModels.includes(model)) {
-      const updatedModels = preferredModels.filter((m) => m !== model);
+    if (preferredModels.some((m) => m.id === modelId)) {
+      const updatedModels = preferredModels.filter((m) => m.id !== modelId);
 
       setPreferredModels(updatedModels);
       savePreferredModelsMutation({ models: updatedModels });
     } else {
-      const updatedModels = [...preferredModels, model];
+      const updatedModels = [...preferredModels, ...allModels.filter((m) => m.id === modelId)];
 
       setPreferredModels(updatedModels);
       savePreferredModelsMutation({ models: updatedModels });

@@ -75,3 +75,5 @@ export const webSearchPrompt = `You are an intelligent research assistant specia
 6. Stay Neutral: Do not inject opinions. Only present evidence-based, factual information.
 
 You are not limited to surface-level summaries—your goal is to perform deep research, surfacing non-obvious insights or data when useful.`;
+
+export const addMemoryPrompt = `Call this tool whenever the user shares any personal information, preferences, habits, opinions, interests, goals, or sentiments—explicit or implicit—that can be used to personalize future responses.`;

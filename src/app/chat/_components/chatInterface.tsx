@@ -55,6 +55,8 @@ export default function ChatInterface({ id, initialMessages }: ChatInterfaceProp
   const updateChatName = useChatsStore((state) => state.updateChatName);
 
   useEffect(() => {
+    console.log("messages", messages);
+
     if (messages.length === 1 && initialMessageCount.current === 0) {
       updateChatName(id as string, messages[0]!.content as string);
     }

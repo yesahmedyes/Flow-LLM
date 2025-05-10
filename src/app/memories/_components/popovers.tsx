@@ -6,6 +6,8 @@ import { Popover, PopoverTrigger } from "~/app/_components/ui/popover";
 import { PopoverContent } from "~/app/_components/ui/popover";
 import { Badge } from "~/app/_components/ui/badge";
 import { Button } from "~/app/_components/ui/button";
+import { api } from "~/trpc/react";
+import { toast } from "sonner";
 
 interface GraphPopoversProps {
   showNodePopup: boolean;
@@ -39,7 +41,7 @@ export function GraphPopovers(props: GraphPopoversProps) {
           <div className="w-4 h-4 pointer-events-none" />
         </PopoverTrigger>
         <PopoverContent
-          className="w-96 p-4 overflow-hidden"
+          className="w-96 p-4 overflow-y-auto max-h-[80vh]"
           side="bottom"
           align="end"
           sideOffset={45}
@@ -97,7 +99,7 @@ export function GraphPopovers(props: GraphPopoversProps) {
           <div className="w-4 h-4 pointer-events-none" />
         </PopoverTrigger>
         <PopoverContent
-          className="w-96 p-4 overflow-hidden"
+          className="w-96 p-4 overflow-y-auto max-h-[80vh]"
           side="bottom"
           align="end"
           sideOffset={30}
@@ -124,28 +126,6 @@ export function GraphPopovers(props: GraphPopoversProps) {
                 {edgePopupContent.relation.fact}
               </p>
             )}
-            {edgePopupContent?.relation.episodes?.length ? (
-              <div className="flex flex-col gap-2">
-                <p className="text-sm font-medium text-black dark:text-white">Episodes:</p>
-                <div className="flex gap-2 mt-1">
-                  {edgePopupContent.relation.episodes.map((episode) => (
-                    <span key={episode} className="text-xs bg-muted px-2 py-1 rounded-md">
-                      {episode}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            ) : null}
-
-            <Button
-              onClick={() => {
-                console.log("delete episodes");
-              }}
-              variant="outlineDestructive"
-              className="w-full mt-2"
-            >
-              Delete Episodes
-            </Button>
           </div>
         </PopoverContent>
       </Popover>
