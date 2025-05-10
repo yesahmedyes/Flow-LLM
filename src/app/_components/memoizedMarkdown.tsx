@@ -3,11 +3,24 @@ import { marked, type Token } from "marked";
 import { memo, useMemo } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import remarkMath from "remark-math";
+import rehypeKatex from "rehype-katex";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism";
+import "katex/dist/katex.min.css";
+
+function preprocessMath(markdown: string): string {
+  let processed = markdown.replace(/\\\(/g, "$").replace(/\\\)/g, "$");
+
+  processed = processed.replace(/\\\[/g, "$$").replace(/\\\]/g, "$$");
+
+  return processed;
+}
 
 function parseMarkdownIntoBlocks(markdown: string): string[] {
-  const tokens = marked.lexer(markdown) as Token[];
+  const processed = preprocessMath(markdown);
+
+  const tokens = marked.lexer(processed) as Token[];
 
   return tokens.map((token: Token) => token.raw);
 }
@@ -42,7 +55,8 @@ function CodeBlock({ codeString, language }: { codeString: string; language: str
 function MarkdownBlock({ content }: { content: string }) {
   return (
     <ReactMarkdown
-      remarkPlugins={[remarkGfm]}
+      remarkPlugins={[remarkGfm, remarkMath]}
+      rehypePlugins={[rehypeKatex]}
       components={{
         code({ className, children, ...props }) {
           const match = /language-(\w+)/.exec(className ?? "");
@@ -85,9 +99,9 @@ export default function MemoizedMarkdown({ content, id }: MemoizedMarkdownProps)
 
   return (
     <>
-      {blocks.map((block, index) => (
-        <MemoizedMarkdownBlock content={block} key={`${id}-block_${index}`} />
-      ))}
+      {blocks.map((block, index) => {
+        return <MemoizedMarkdownBlock content={block} key={`${id}-block_${index}`} />;
+      })}
     </>
   );
 }

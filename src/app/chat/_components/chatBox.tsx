@@ -65,11 +65,11 @@ export default function ChatBox(props: ChatBoxProps) {
       )}
 
       <div
-        className={`flex relative flex-col justify-between rounded-2xl border bg-background border-foreground/10 px-2 py-2 ${
+        className={`flex relative flex-col gap-1 justify-between rounded-2xl border bg-background border-foreground/10 px-2 py-2 ${
           messagesPresent && !isFullScreen && "mb-8"
         } ${isFullScreen ? "w-full h-full max-w-6xl max-h-[90vh]" : "w-4xl"}`}
       >
-        <div className="absolute top-0 right-0.5 px-4 py-3.5 cursor-pointer">
+        <div className="absolute top-0.5 right-0.5 px-4 py-3.5 cursor-pointer">
           {isFullScreen ? (
             <Minimize2 onClick={toggleFullScreen} size={16} className="text-muted-foreground" />
           ) : (
@@ -115,13 +115,16 @@ export default function ChatBox(props: ChatBoxProps) {
           </div>
           {isLoading ? (
             <div
-              className="flex flex-row gap-2 items-center cursor-pointer bg-popover hover:bg-popover/50 rounded-full w-8 h-8 border justify-center mr-1"
+              className="flex flex-row group gap-2 items-center cursor-pointer bg-popover hover:bg-destructive/80 hover:border-destructive/80 rounded-full w-8 h-8 border justify-center mr-1"
               onClick={stop}
             >
-              <Stop size={16} className="stroke-muted-foreground" />
+              <Stop size={16} className="stroke-muted-foreground group-hover:stroke-white" />
             </div>
           ) : (
-            <ArrowRight size={20} className="stroke-white/50 mr-1" />
+            <ArrowRight
+              size={20}
+              className={`mr-1 cursor-pointer hover:stroke-foreground ${message.length > 0 ? "stroke-muted-foreground" : "stroke-white/50"}`}
+            />
           )}
         </div>
       </div>

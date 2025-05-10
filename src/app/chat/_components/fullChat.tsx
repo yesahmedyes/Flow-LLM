@@ -1,22 +1,27 @@
 import { type Message } from "ai";
 import { ScrollArea } from "../../_components/ui/scroll-area";
 import MemoizedMarkdown from "../../_components/memoizedMarkdown";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "~/app/_components/ui/accordion";
+import UserMessage from "./userMessage";
 
 interface FullChatProps {
   messages: Message[];
   isLoading: boolean;
+  onEditMessage: (messageId: string, content: string) => void;
 }
 
-export default function FullChat({ messages, isLoading }: FullChatProps) {
+export default function FullChat({ messages, isLoading, onEditMessage }: FullChatProps) {
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const prevMessagesLengthRef = useRef<number>(0);
   const lastContentLengthRef = useRef<number>(0);
 
+  const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
+  const [editContent, setEditContent] = useState<string>("");
+
   useEffect(() => {
     // Check if number of messages has increased
-    if (messages.length > prevMessagesLengthRef.current) {
+    if (messages.length !== prevMessagesLengthRef.current) {
       if (scrollAreaRef.current) {
         scrollAreaRef.current.scrollIntoView({ behavior: "smooth", block: "end" });
       }
@@ -40,17 +45,47 @@ export default function FullChat({ messages, isLoading }: FullChatProps) {
     }
   }, [messages]);
 
+  const handleEditStart = (messageId: string) => {
+    const message = messages.find((m) => m.id === messageId);
+
+    if (message) {
+      setEditingMessageId(messageId);
+      setEditContent(message.content);
+    }
+  };
+
+  const handleEditChange = (content: string) => {
+    setEditContent(content);
+  };
+
+  const handleEditSave = () => {
+    if (editingMessageId) {
+      onEditMessage(editingMessageId, editContent);
+    }
+
+    setEditingMessageId(null);
+  };
+
+  const handleEditCancel = () => {
+    setEditingMessageId(null);
+  };
+
   return (
     <ScrollArea ref={scrollAreaRef} className="w-full max-w-4xl pt-20 pb-48">
       <div className="flex flex-col w-full max-w-4xl">
         {messages.map((message) => {
           if (message.role === "user") {
             return (
-              <div key={message.id} className={`flex justify-end`}>
-                <div className="max-w-3xl rounded-2xl px-5 py-3 leading-relaxed bg-muted text-foreground font-light dark:font-normal whitespace-pre-wrap">
-                  {message.content}
-                </div>
-              </div>
+              <UserMessage
+                key={message.id}
+                message={message}
+                isEditing={message.id === editingMessageId}
+                editContent={editContent}
+                onEditStart={handleEditStart}
+                onEditChange={handleEditChange}
+                onEditSave={handleEditSave}
+                onEditCancel={handleEditCancel}
+              />
             );
           } else if (message.role === "assistant") {
             return (

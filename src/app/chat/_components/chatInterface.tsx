@@ -25,13 +25,10 @@ export default function ChatInterface({ id, initialMessages }: ChatInterfaceProp
 
   const initialMessageCount = useRef(initialMessages.length);
 
-  const { messages, status, stop, append } = useChat({
+  const { messages, status, stop, append, setMessages } = useChat({
     id: id as string,
     initialMessages: initialMessages,
     sendExtraMessageFields: true,
-    onFinish: (message, options) => {
-      console.log("message", messages);
-    },
   });
 
   const handleSubmit = useCallback(
@@ -55,8 +52,6 @@ export default function ChatInterface({ id, initialMessages }: ChatInterfaceProp
   const updateChatName = useChatsStore((state) => state.updateChatName);
 
   useEffect(() => {
-    console.log("messages", messages);
-
     if (messages.length === 1 && initialMessageCount.current === 0) {
       updateChatName(id as string, messages[0]!.content as string);
     }
@@ -69,9 +64,31 @@ export default function ChatInterface({ id, initialMessages }: ChatInterfaceProp
     }
   }, [messages, id, updateChatById, updateChatName, user]);
 
+  const onEditMessage = (messageId: string, content: string) => {
+    const messageIndex = messages.findIndex((msg) => msg.id === messageId);
+
+    if (messageIndex === -1) return;
+
+    const message = messages[messageIndex]!;
+
+    if (message.role !== "user") return;
+
+    const messagesUpToEdit = messages.slice(0, messageIndex);
+
+    setMessages([...messagesUpToEdit]);
+
+    initialMessageCount.current = messages.length;
+
+    void handleSubmit(content);
+  };
+
   return (
     <div className="flex w-full mx-auto flex-col items-center">
-      <FullChat messages={messages as Message[]} isLoading={status === "streaming" || status === "submitted"} />
+      <FullChat
+        messages={messages as Message[]}
+        onEditMessage={onEditMessage}
+        isLoading={status === "streaming" || status === "submitted"}
+      />
 
       <ChatBox
         messagesPresent={messages.length > 0}
