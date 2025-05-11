@@ -18,10 +18,10 @@ export async function POST(request: Request) {
     const fileKey = `${userId}/${crypto.randomUUID()}-${fileName}`;
 
     const s3Client = new S3Client({
-      region: env.AWS_REGION as string,
+      region: env.AWS_REST_REGION as string,
       credentials: {
-        accessKeyId: env.AWS_ACCESS_KEY as string,
-        secretAccessKey: env.AWS_SECRET_KEY as string,
+        accessKeyId: env.AWS_REST_ACCESS_KEY as string,
+        secretAccessKey: env.AWS_REST_SECRET_KEY as string,
       },
     });
 
@@ -33,7 +33,7 @@ export async function POST(request: Request) {
 
     const presignedUrl = await getSignedUrl(s3Client, command, { expiresIn: 3600 });
 
-    const fileUrl = `https://flowllm-bucket.s3.${env.AWS_REGION}.amazonaws.com/${fileKey}`;
+    const fileUrl = `https://flowllm-bucket.s3.${env.AWS_REST_REGION}.amazonaws.com/${fileKey}`;
 
     return NextResponse.json({ presignedUrl, fileUrl });
   } catch (error) {

@@ -15,9 +15,9 @@ export const env = createEnv({
     UPSTASH_REDIS_REST_URL: z.string().url(),
     UPSTASH_REDIS_REST_TOKEN: z.string(),
     COHERE_API_KEY: z.string(),
-    AWS_REGION: z.string(),
-    AWS_ACCESS_KEY: z.string(),
-    AWS_SECRET_KEY: z.string(),
+    AWS_REST_REGION: z.string(),
+    AWS_REST_ACCESS_KEY: z.string(),
+    AWS_REST_SECRET_KEY: z.string(),
     PINECONE_API_KEY: z.string(),
     ZEP_API_KEY: z.string(),
   },
@@ -29,7 +29,6 @@ export const env = createEnv({
    */
   client: {
     NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: z.string(),
-    NEXT_PUBLIC_APP_URL: z.string().url(),
   },
 
   /**
@@ -45,11 +44,10 @@ export const env = createEnv({
     OPENROUTER_API_KEY: process.env.OPENROUTER_API_KEY,
     UPSTASH_REDIS_REST_URL: process.env.UPSTASH_REDIS_REST_URL,
     UPSTASH_REDIS_REST_TOKEN: process.env.UPSTASH_REDIS_REST_TOKEN,
-    NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
     COHERE_API_KEY: process.env.COHERE_API_KEY,
-    AWS_REGION: process.env.AWS_REGION,
-    AWS_ACCESS_KEY: process.env.AWS_ACCESS_KEY,
-    AWS_SECRET_KEY: process.env.AWS_SECRET_KEY,
+    AWS_REST_REGION: process.env.AWS_REST_REGION,
+    AWS_REST_ACCESS_KEY: process.env.AWS_REST_ACCESS_KEY,
+    AWS_REST_SECRET_KEY: process.env.AWS_REST_SECRET_KEY,
     PINECONE_API_KEY: process.env.PINECONE_API_KEY,
     ZEP_API_KEY: process.env.ZEP_API_KEY,
   },
