@@ -83,7 +83,7 @@ export default function ChatInterface({ id, initialMessages }: ChatInterfaceProp
   };
 
   return (
-    <div className="flex w-full mx-auto flex-col items-center">
+    <div className="flex w-full mx-auto flex-col items-center h-full overflow-y-auto">
       <FullChat
         messages={messages as Message[]}
         onEditMessage={onEditMessage}

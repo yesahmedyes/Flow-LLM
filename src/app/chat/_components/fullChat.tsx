@@ -15,31 +15,63 @@ export default function FullChat({ messages, isLoading, onEditMessage }: FullCha
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const prevMessagesLengthRef = useRef<number>(0);
   const lastContentLengthRef = useRef<number>(0);
+  const userManuallyScrolledRef = useRef<boolean>(false);
+  const isAutoScrollingRef = useRef<boolean>(false);
 
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
   const [editContent, setEditContent] = useState<string>("");
 
+  const handleScroll = () => {
+    if (scrollAreaRef.current && !isAutoScrollingRef.current) {
+      const scrollAreaViewport = scrollAreaRef.current?.querySelector("[data-slot='scroll-area-viewport']");
+
+      if (scrollAreaViewport) {
+        const { scrollHeight, scrollTop, clientHeight } = scrollAreaViewport;
+        const isAtBottom = scrollHeight - scrollTop - clientHeight < 100;
+
+        // Only mark as user scrolled if this is a genuine user scroll event (not auto-scroll)
+        if (!isAtBottom) {
+          userManuallyScrolledRef.current = true;
+        } else {
+          userManuallyScrolledRef.current = false;
+        }
+      }
+    }
+  };
+
+  const scrollToBottom = () => {
+    if (scrollAreaRef.current) {
+      const scrollAreaViewport = scrollAreaRef.current?.querySelector("[data-slot='scroll-area-viewport']");
+
+      if (scrollAreaViewport) {
+        isAutoScrollingRef.current = true;
+        scrollAreaViewport.scrollTo({ top: scrollAreaViewport.scrollHeight, behavior: "smooth" });
+
+        // Reset the isAutoScrolling flag after animation completes
+        setTimeout(() => {
+          isAutoScrollingRef.current = false;
+        }, 500);
+      }
+    }
+  };
+
   useEffect(() => {
     // Check if number of messages has increased
     if (messages.length !== prevMessagesLengthRef.current) {
-      if (scrollAreaRef.current) {
-        scrollAreaRef.current.scrollIntoView({ behavior: "smooth", block: "end" });
-      }
+      // Reset userScrolled flag when new message is added
+      userManuallyScrolledRef.current = false;
+      scrollToBottom();
 
       prevMessagesLengthRef.current = messages.length;
-
       lastContentLengthRef.current = messages[messages.length - 1]?.content.length ?? 0;
     }
     // Or if the last message's content length has increased substantially
     else if (messages.length > 0) {
       const currentContentLength = messages[messages.length - 1]?.content.length ?? 0;
 
-      // Only scroll if content length increased by at least 300 characters
-      if (currentContentLength > lastContentLengthRef.current + 300) {
-        if (scrollAreaRef.current) {
-          scrollAreaRef.current.scrollIntoView({ behavior: "smooth", block: "end" });
-        }
-
+      // Only scroll if content length increased by at least 500 characters and user hasn't manually scrolled up
+      if (currentContentLength > lastContentLengthRef.current + 500 && !userManuallyScrolledRef.current) {
+        scrollToBottom();
         lastContentLengthRef.current = currentContentLength;
       }
     }
@@ -71,8 +103,8 @@ export default function FullChat({ messages, isLoading, onEditMessage }: FullCha
   };
 
   return (
-    <ScrollArea ref={scrollAreaRef} className="w-full max-w-4xl pt-20 pb-48">
-      <div className="flex flex-col w-full max-w-4xl">
+    <ScrollArea onScrollCapture={handleScroll} ref={scrollAreaRef} className="w-full h-full">
+      <div className="flex flex-col mx-auto max-w-4xl pt-20 pb-48">
         {messages.map((message) => {
           if (message.role === "user") {
             return (

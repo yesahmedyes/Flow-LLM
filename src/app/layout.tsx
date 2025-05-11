@@ -38,7 +38,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
             </div>
 
             {/* Desktop version */}
-            <div className="hidden lg:block h-full w-full">
+            <div className="hidden lg:block">
               <SidebarProvider defaultOpen={false}>
                 <AppSidebar />
 

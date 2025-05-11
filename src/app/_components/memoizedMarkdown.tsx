@@ -56,7 +56,23 @@ function MarkdownBlock({ content }: { content: string }) {
   return (
     <ReactMarkdown
       remarkPlugins={[remarkGfm, remarkMath]}
-      rehypePlugins={[rehypeKatex]}
+      rehypePlugins={[
+        [
+          rehypeKatex,
+          {
+            output: "html",
+            throwOnError: false,
+            strict: false,
+            trust: true,
+            macros: {
+              "\\eqref": "\\href{#1}{}",
+            },
+            maxSize: 500,
+            maxExpand: 1000,
+            displayMode: false,
+          },
+        ],
+      ]}
       components={{
         code({ className, children, ...props }) {
           const match = /language-(\w+)/.exec(className ?? "");

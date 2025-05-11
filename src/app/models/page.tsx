@@ -11,6 +11,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "../_compon
 import { Heart } from "iconsax-react";
 import CustomLoader from "../_components/customLoader";
 import { api } from "~/trpc/react";
+import { ScrollArea } from "../_components/ui/scroll-area";
 
 export default function ModelsPage() {
   const { allModels, setAllModels, preferredModels, setPreferredModels } = useModelsStore();
@@ -69,7 +70,7 @@ export default function ModelsPage() {
   };
 
   return allModels.length > 0 ? (
-    <div className="w-full h-screen overflow-y-auto">
+    <ScrollArea className="w-full h-full">
       <div className="max-w-9/12 mx-auto py-20">
         <Input
           className="mb-4 h-11"
@@ -190,7 +191,7 @@ export default function ModelsPage() {
           )}
         </SheetContent>
       </Sheet>
-    </div>
+    </ScrollArea>
   ) : (
     <CustomLoader />
   );
