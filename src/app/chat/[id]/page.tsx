@@ -37,15 +37,15 @@ export default function ChatPage() {
   });
 
   useEffect(() => {
+    if (!id || id.length === 0) {
+      router.replace("/chat");
+
+      toast.error("Invalid chat id. Redirecting to new chat...");
+
+      return;
+    }
+
     if (!storedChat) {
-      if (!id || id.length === 0) {
-        router.replace("/chat");
-
-        toast.error("Invalid chat id. Redirecting to new chat...");
-
-        return;
-      }
-
       getChatByIdMutation.mutate({ id: id as string });
     }
   }, [id]);

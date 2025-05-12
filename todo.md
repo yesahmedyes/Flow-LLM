@@ -3,10 +3,10 @@
 - [ ] Add ability to upload Image and File Attachments in chat
 - [ ] Upload images retrieved from RAG in agent pipeline
 - [ ] Delete vector embeddings for the deleted files
-- [ ] Agent should use full message history to retrieve relevant chunks, search web, etc.
 - [ ] Show reasoning, sources, and errors in response
+- [ ] User message should be collpased if it's too long
 
-# Improvements
+# Architecture Improvements
 
 - [ ] Make the AWS files private and only accessible using a temporary presigned URL
 - [ ] User should be able to delete nodes and edges in the graph

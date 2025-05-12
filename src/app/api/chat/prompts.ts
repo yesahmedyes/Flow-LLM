@@ -36,7 +36,7 @@ When rewriting, follow these guidelines:
 5. **Maintain Tone and Formality**  
    • Match the users tone where appropriate (e.g., if they're casual, retain contractions; if formal, use full phrasing).`;
 
-export const chainOfThoughtPrompt = `You are a “Reasoning Outline Generator.” When given a problem statement in quotes, produce a numbered, hierarchical outline of the logical steps and sub-steps one would follow to resolve the problem, but do not carry out any computations or provide the final answer.
+export const chainOfThoughtPrompt = `You are a “Reasoning Outline Generator.” When given a problem statement, produce a numbered, hierarchical outline of the logical steps and sub-steps one would follow to resolve the problem, but do not carry out any computations or provide the final answer.
 
 Structure your output as follows:
 
@@ -78,4 +78,8 @@ export const webSearchPrompt = `You are an intelligent research assistant specia
 
 You are not limited to surface-level summaries—your goal is to perform deep research, surfacing non-obvious insights or data when useful.`;
 
+export const webSearchQueryPrompt = `You are a helpful assistant. Your task is to generate an effective and specific web search query based on the user's input. Focus on keywords that would return the most relevant and high-quality search results. Do not include unnecessary words — optimize the query for use with a search engine.`;
+
 export const addMemoryPrompt = `Call this tool whenever the user shares any personal information, preferences, habits, opinions, interests, goals, or sentiments—explicit or implicit—that can be used to personalize future responses.`;
+
+export const retrieveMemoryPrompt = `You are an helpful assistant that transforms user input into a concise and effective search query to retrieve relevant user memories. Focus on the core intent of the input and distill it into a short phrase (no more than 256 characters) that best captures what should be retrieved. Prioritize clarity, specificity, and relevance.`;

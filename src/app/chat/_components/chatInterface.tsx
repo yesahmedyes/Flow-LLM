@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useRef, useCallback } from "react";
+import React, { useRef, useCallback, useEffect } from "react";
 import { useChat } from "@ai-sdk/react";
 import ChatBox from "./chatBox";
 import FullChat from "./fullChat";
@@ -9,6 +9,7 @@ import type { Message } from "ai";
 import { useUser } from "@clerk/nextjs";
 import { useModelsStore } from "~/app/stores/modelsStore";
 import { useAgentStore } from "~/app/stores/agentStore";
+import { chats } from "~/server/db/schema";
 
 interface ChatInterfaceProps {
   id: string;
@@ -29,9 +30,6 @@ export default function ChatInterface({ id, initialMessages }: ChatInterfaceProp
     initialMessages: initialMessages,
     sendExtraMessageFields: true,
     experimental_throttle: 100,
-    onFinish: (_) => {
-      updateChatById(id as string, messages as Message[], user!.id as string);
-    },
   });
 
   const handleSubmit = useCallback(
@@ -49,13 +47,11 @@ export default function ChatInterface({ id, initialMessages }: ChatInterfaceProp
         agent: agentSelected.current ? agent : undefined,
       };
 
-      // Use the append function from useChat to add messages
       await append({ role: "user", content: message }, { body });
     },
     [selectedModel, agentSelected, agent, append],
   );
 
-  const updateChatById = useChatsStore((state) => state.updateChatById);
   const updateChatName = useChatsStore((state) => state.updateChatName);
 
   const onEditMessage = (messageId: string, content: string) => {
@@ -73,6 +69,18 @@ export default function ChatInterface({ id, initialMessages }: ChatInterfaceProp
 
     void handleSubmit(content);
   };
+
+  const { updateChatById } = useChatsStore();
+
+  const totalMessages = useRef(messages.length);
+
+  useEffect(() => {
+    if (messages.length > totalMessages.current) {
+      updateChatById(id as string, messages, user!.id as string);
+
+      totalMessages.current = messages.length;
+    }
+  }, [messages.length]);
 
   return (
     <div className="flex w-full mx-auto flex-col items-center h-full overflow-y-auto">

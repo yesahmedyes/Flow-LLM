@@ -37,19 +37,6 @@ export const memoryRouter = createTRPCRouter({
 
     return { triplets };
   }),
-  deleteEpisode: protectedProcedure
-    .input(
-      z.object({
-        episodeIds: z.array(z.string()),
-      }),
-    )
-    .mutation(async ({ input }) => {
-      console.log("deleting episodes", input.episodeIds);
-
-      const deleted = await Promise.all(input.episodeIds.map((episodeId) => zep.graph.episode.delete(episodeId)));
-
-      console.log("deleted", deleted);
-    }),
 });
 
 const NODE_BATCH_SIZE = 100;
