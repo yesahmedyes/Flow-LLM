@@ -6,7 +6,7 @@ import { useUser } from "@clerk/nextjs";
 import { useModelsStore } from "~/app/stores/modelsStore";
 import { useEffect } from "react";
 import { api } from "~/trpc/react";
-import { useAgentStore } from "./stores/agentStore";
+import { useAgentStore, type Agent } from "./stores/agentStore";
 import type { Model } from "~/lib/types/model";
 
 export default function Provider({ children }: { children: React.ReactNode }) {
@@ -23,13 +23,20 @@ export default function Provider({ children }: { children: React.ReactNode }) {
 
 function PreferencesProvider({ children }: { children: React.ReactNode }) {
   const { theme, setTheme } = useTheme();
+
   const { user } = useUser();
-  const { preferredModels, setPreferredModels } = useModelsStore();
-  const { setAgent, contentLoaded, setContentLoaded } = useAgentStore();
+
+  const {
+    setPreferredModels,
+    contentLoaded: modelsContentLoaded,
+    setContentLoaded: setModelsContentLoaded,
+  } = useModelsStore();
+
+  const { setAgent, contentLoaded: agentContentLoaded, setContentLoaded: setAgentContentLoaded } = useAgentStore();
 
   // Query for models using tRPC
   const { data: modelsData } = api.prefs.getPreferredModels.useQuery(undefined, {
-    enabled: !!user?.id && preferredModels.length === 0,
+    enabled: !!user?.id && !modelsContentLoaded,
   });
 
   // Query for theme using tRPC
@@ -38,14 +45,29 @@ function PreferencesProvider({ children }: { children: React.ReactNode }) {
   });
 
   const { data: agentData } = api.prefs.getAgentPreferences.useQuery(undefined, {
-    enabled: !!user?.id && !contentLoaded,
+    enabled: !!user?.id && !agentContentLoaded,
   });
+
+  useEffect(() => {
+    const preferredModels = localStorage.getItem("preferredModels");
+    const agentPreferences = localStorage.getItem("agentPreferences");
+
+    if (preferredModels) {
+      setPreferredModels(JSON.parse(preferredModels) as Model[]);
+    }
+
+    if (agentPreferences) {
+      setAgent(JSON.parse(agentPreferences) as Agent);
+    }
+  }, []);
 
   useEffect(() => {
     if (modelsData && modelsData.length > 0) {
       setPreferredModels(modelsData as Model[]);
+
+      setModelsContentLoaded(true);
     }
-  }, [modelsData, setPreferredModels]);
+  }, [modelsData, setPreferredModels, setModelsContentLoaded]);
 
   useEffect(() => {
     if (themeData && ["light", "dark"].includes(themeData)) {
@@ -54,12 +76,12 @@ function PreferencesProvider({ children }: { children: React.ReactNode }) {
   }, [themeData, setTheme]);
 
   useEffect(() => {
-    if (agentData && !contentLoaded && Object.keys(agentData).length > 0) {
+    if (agentData && !agentContentLoaded && Object.keys(agentData).length > 0) {
       setAgent(agentData);
 
-      setContentLoaded(true);
+      setAgentContentLoaded(true);
     }
-  }, [agentData, contentLoaded, setAgent, setContentLoaded]);
+  }, [agentData, agentContentLoaded, setAgent, setAgentContentLoaded]);
 
   return children;
 }

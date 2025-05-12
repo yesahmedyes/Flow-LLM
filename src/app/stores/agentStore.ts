@@ -28,6 +28,10 @@ export const useAgentStore = create<AgentStore>()((set) => ({
     critique: false,
   },
   contentLoaded: false,
-  setAgent: (agent) => set({ agent }),
+  setAgent: (agent) => {
+    set({ agent });
+
+    localStorage.setItem("agentPreferences", JSON.stringify(agent));
+  },
   setContentLoaded: (contentLoaded) => set({ contentLoaded }),
 }));

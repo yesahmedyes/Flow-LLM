@@ -10,7 +10,6 @@
 
 - [ ] Make the AWS files private and only accessible using a temporary presigned URL
 - [ ] User should be able to delete nodes and edges in the graph
-- [ ] Persist redis cache to browser local storage
 
 # Stretch Goals
 

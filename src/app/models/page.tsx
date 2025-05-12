@@ -54,8 +54,6 @@ export default function ModelsPage() {
   const togglePreferred = (e: React.MouseEvent, modelId: string) => {
     e.stopPropagation();
 
-    console.log("togglePreferred", modelId);
-
     if (preferredModels.some((m) => m.id === modelId)) {
       const updatedModels = preferredModels.filter((m) => m.id !== modelId);
 
