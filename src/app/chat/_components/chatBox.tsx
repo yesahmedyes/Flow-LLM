@@ -1,27 +1,28 @@
-/* eslint-disable jsx-a11y/alt-text */
-import { DocumentText, Image, ArrowRight, Stop } from "iconsax-react";
+import { DocumentText, Image, ArrowRight, Stop, Setting4 } from "iconsax-react";
 
 import { Add } from "iconsax-react";
 import { Popover, PopoverContent, PopoverTrigger } from "../../_components/ui/popover";
-import { Textarea } from "../../_components/ui/textarea";
+import TextareaAutosize from "react-textarea-autosize";
 import { useState } from "react";
 import AgentSelection from "../../_components/agentSelection";
 import { Minimize2, Maximize2 } from "lucide-react";
+import React from "react";
 
 interface ChatBoxProps {
   messagesPresent: boolean;
   onSubmit: (message: string) => void;
   stop: () => void;
   isLoading: boolean;
-  agentSelected: boolean;
-  setAgentSelected: (agentSelected: boolean) => void;
+  setAgentSelected: (value: boolean) => void;
 }
 
-export default function ChatBox(props: ChatBoxProps) {
-  const { messagesPresent, onSubmit, stop, isLoading, agentSelected, setAgentSelected } = props;
+const ChatBox = React.memo((props: ChatBoxProps) => {
+  const { messagesPresent, onSubmit, stop, isLoading, setAgentSelected } = props;
 
   const [message, setMessage] = useState("");
   const [isFullScreen, setIsFullScreen] = useState(false);
+
+  const [agent, setAgent] = useState(false);
 
   const handleSubmit = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -43,11 +44,8 @@ export default function ChatBox(props: ChatBoxProps) {
   const [openAgentDialog, setOpenAgentDialog] = useState(false);
 
   const onAgentSelected = (agentSelected: boolean) => {
+    setAgent(agentSelected);
     setAgentSelected(agentSelected);
-
-    if (agentSelected) {
-      setOpenAgentDialog(true);
-    }
   };
 
   return (
@@ -65,29 +63,33 @@ export default function ChatBox(props: ChatBoxProps) {
       )}
 
       <div
-        className={`flex relative flex-col gap-1 justify-between rounded-2xl border bg-background border-foreground/10 px-2 py-2 ${
+        className={`flex relative flex-col gap-1 justify-between rounded-2xl border bg-background border-foreground/10 py-2 ${
           messagesPresent && !isFullScreen && "mb-8"
         } ${isFullScreen ? "w-full h-full max-w-6xl max-h-[90vh]" : "w-4xl"}`}
       >
-        <div className="absolute top-0.5 right-0.5 px-4 py-3.5 cursor-pointer">
+        <div
+          onClick={toggleFullScreen}
+          className={`absolute cursor-pointer top-0 right-0 ${isFullScreen ? "px-4 py-4" : "px-3.5 py-3.5"}`}
+        >
           {isFullScreen ? (
-            <Minimize2 onClick={toggleFullScreen} size={16} className="text-muted-foreground" />
+            <Minimize2 size={16} className="text-muted-foreground" />
           ) : (
-            <Maximize2 onClick={toggleFullScreen} size={12} className="text-muted-foreground" />
+            <Maximize2 size={12} className="text-muted-foreground" />
           )}
         </div>
         <div className="flex items-center">
-          <Textarea
+          <TextareaAutosize
             placeholder="Ask Flow"
-            className={`border-none focus-visible:ring-0 pr-6 ${
-              isFullScreen && "max-h-[calc(90vh-70px)] w-full flex-1 overflow-y-auto resize-none"
+            className={`placeholder:text-muted-foreground aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive px-4 py-1.5 flex field-sizing-content w-full bg-transparent text-base transition-[color,box-shadow] outline-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm resize-none ${
+              isFullScreen ? "max-h-[calc(90vh-70px)] w-full" : "w-full max-h-24"
             }`}
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             onKeyDown={handleSubmit}
+            minRows={1}
           />
         </div>
-        <div className="flex flex-row justify-between items-center pt-2 p-1">
+        <div className="flex flex-row justify-between items-center pt-2 px-2 pb-1">
           <div className="flex flex-row gap-2.5 items-center">
             <Popover>
               <PopoverTrigger asChild>
@@ -107,10 +109,22 @@ export default function ChatBox(props: ChatBoxProps) {
               </PopoverContent>
             </Popover>
             <div
-              onClick={() => onAgentSelected(!agentSelected)}
-              className={`text-xs font-normal px-5 bg-popover cursor-pointer py-2 rounded-full border ${agentSelected ? "border-blue-500/80 dark:border-blue-500/50 text-blue-500 " : "border-foreground/10 text-muted-foreground"}`}
+              onClick={() => onAgentSelected(!agent)}
+              className={`text-xs flex flex-row gap-3 items-center font-normal px-5 bg-popover cursor-pointer py-2 rounded-full border ${agent ? "border-blue-500/80 dark:border-blue-500/50 text-blue-500 " : "border-foreground/10 text-muted-foreground"}`}
             >
               Agent
+              {agent && (
+                <>
+                  <Setting4
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setOpenAgentDialog(true);
+                    }}
+                    size={14}
+                    className="stroke-muted-foreground cursor-pointer"
+                  />
+                </>
+              )}
             </div>
           </div>
           {isLoading ? (
@@ -132,4 +146,8 @@ export default function ChatBox(props: ChatBoxProps) {
       <AgentSelection open={openAgentDialog} setOpen={setOpenAgentDialog} />
     </div>
   );
-}
+});
+
+ChatBox.displayName = "ChatBox";
+
+export default ChatBox;

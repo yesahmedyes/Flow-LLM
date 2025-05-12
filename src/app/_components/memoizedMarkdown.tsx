@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { marked, type Token } from "marked";
 import { memo, useMemo } from "react";
 import ReactMarkdown from "react-markdown";
@@ -8,6 +8,7 @@ import rehypeKatex from "rehype-katex";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism";
 import "katex/dist/katex.min.css";
+import React from "react";
 
 function preprocessMath(markdown: string): string {
   let processed = markdown.replace(/\\\(/g, "$").replace(/\\\)/g, "$");
@@ -18,9 +19,7 @@ function preprocessMath(markdown: string): string {
 }
 
 function parseMarkdownIntoBlocks(markdown: string): string[] {
-  const processed = preprocessMath(markdown);
-
-  const tokens = marked.lexer(processed) as Token[];
+  const tokens = marked.lexer(markdown) as Token[];
 
   return tokens.map((token: Token) => token.raw);
 }
@@ -52,7 +51,14 @@ function CodeBlock({ codeString, language }: { codeString: string; language: str
   );
 }
 
+const MemoizedCodeBlock = memo(
+  CodeBlock,
+  (prevProps, nextProps) => prevProps.codeString === nextProps.codeString && prevProps.language === nextProps.language,
+);
+
 function MarkdownBlock({ content }: { content: string }) {
+  const processed = preprocessMath(content);
+
   return (
     <ReactMarkdown
       remarkPlugins={[remarkGfm, remarkMath]}
@@ -67,8 +73,8 @@ function MarkdownBlock({ content }: { content: string }) {
             macros: {
               "\\eqref": "\\href{#1}{}",
             },
-            maxSize: 500,
-            maxExpand: 1000,
+            maxSize: 200,
+            maxExpand: 500,
             displayMode: false,
           },
         ],
@@ -91,14 +97,14 @@ function MarkdownBlock({ content }: { content: string }) {
             );
           }
 
-          return <CodeBlock codeString={codeString} language={language} />;
+          return <MemoizedCodeBlock codeString={codeString} language={language} />;
         },
         pre({ children }) {
           return <>{children}</>;
         },
       }}
     >
-      {content}
+      {processed}
     </ReactMarkdown>
   );
 }
@@ -111,7 +117,15 @@ interface MemoizedMarkdownProps {
 }
 
 export default function MemoizedMarkdown({ content, id }: MemoizedMarkdownProps) {
-  const blocks = useMemo(() => parseMarkdownIntoBlocks(content), [content]);
+  const prevContentLength = useRef(0);
+
+  const blocks = useMemo(() => {
+    const newBlocks = parseMarkdownIntoBlocks(content);
+
+    prevContentLength.current = content.length;
+
+    return newBlocks;
+  }, [content]);
 
   return (
     <>

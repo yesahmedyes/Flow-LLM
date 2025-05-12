@@ -1,180 +1,63 @@
 import { type Message } from "ai";
-import { ScrollArea } from "../../_components/ui/scroll-area";
+import { Virtuoso } from "react-virtuoso";
 import MemoizedMarkdown from "../../_components/memoizedMarkdown";
-import { useEffect, useRef, useState } from "react";
-import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "~/app/_components/ui/accordion";
 import UserMessage from "./userMessage";
+import React from "react";
+import AgentDetails from "./agentDetails";
 
 interface FullChatProps {
   messages: Message[];
-  isLoading: boolean;
   onEditMessage: (messageId: string, content: string) => void;
 }
 
-export default function FullChat({ messages, isLoading, onEditMessage }: FullChatProps) {
-  const scrollAreaRef = useRef<HTMLDivElement>(null);
-  const prevMessagesLengthRef = useRef<number>(0);
-  const lastContentLengthRef = useRef<number>(0);
-  const userManuallyScrolledRef = useRef<boolean>(false);
-  const isAutoScrollingRef = useRef<boolean>(false);
-
-  const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
-  const [editContent, setEditContent] = useState<string>("");
-
-  const handleScroll = () => {
-    if (scrollAreaRef.current && !isAutoScrollingRef.current) {
-      const scrollAreaViewport = scrollAreaRef.current?.querySelector("[data-slot='scroll-area-viewport']");
-
-      if (scrollAreaViewport) {
-        const { scrollHeight, scrollTop, clientHeight } = scrollAreaViewport;
-        const isAtBottom = scrollHeight - scrollTop - clientHeight < 100;
-
-        // Only mark as user scrolled if this is a genuine user scroll event (not auto-scroll)
-        if (!isAtBottom) {
-          userManuallyScrolledRef.current = true;
-        } else {
-          userManuallyScrolledRef.current = false;
-        }
-      }
-    }
-  };
-
-  const scrollToBottom = () => {
-    if (scrollAreaRef.current) {
-      const scrollAreaViewport = scrollAreaRef.current?.querySelector("[data-slot='scroll-area-viewport']");
-
-      if (scrollAreaViewport) {
-        isAutoScrollingRef.current = true;
-        scrollAreaViewport.scrollTo({ top: scrollAreaViewport.scrollHeight, behavior: "smooth" });
-
-        // Reset the isAutoScrolling flag after animation completes
-        setTimeout(() => {
-          isAutoScrollingRef.current = false;
-        }, 500);
-      }
-    }
-  };
-
-  useEffect(() => {
-    // Check if number of messages has increased
-    if (messages.length !== prevMessagesLengthRef.current) {
-      // Reset userScrolled flag when new message is added
-      userManuallyScrolledRef.current = false;
-      scrollToBottom();
-
-      prevMessagesLengthRef.current = messages.length;
-      lastContentLengthRef.current = messages[messages.length - 1]?.content.length ?? 0;
-    }
-    // Or if the last message's content length has increased substantially
-    else if (messages.length > 0) {
-      const currentContentLength = messages[messages.length - 1]?.content.length ?? 0;
-
-      // Only scroll if content length increased by at least 500 characters and user hasn't manually scrolled up
-      if (currentContentLength > lastContentLengthRef.current + 500 && !userManuallyScrolledRef.current) {
-        scrollToBottom();
-        lastContentLengthRef.current = currentContentLength;
-      }
-    }
-  }, [messages]);
-
-  const handleEditStart = (messageId: string) => {
-    const message = messages.find((m) => m.id === messageId);
-
-    if (message) {
-      setEditingMessageId(messageId);
-      setEditContent(message.content);
-    }
-  };
-
-  const handleEditChange = (content: string) => {
-    setEditContent(content);
-  };
-
-  const handleEditSave = () => {
-    if (editingMessageId) {
-      onEditMessage(editingMessageId, editContent);
-    }
-
-    setEditingMessageId(null);
-  };
-
-  const handleEditCancel = () => {
-    setEditingMessageId(null);
-  };
+const FullChat = React.memo(({ messages, onEditMessage }: FullChatProps) => {
+  const messagesLength = messages.length - 1;
 
   return (
-    <ScrollArea onScrollCapture={handleScroll} ref={scrollAreaRef} className="w-full h-full">
-      <div className="flex flex-col mx-auto max-w-4xl pt-20 pb-48">
-        {messages.map((message) => {
-          if (message.role === "user") {
-            return (
-              <UserMessage
-                key={message.id}
-                message={message}
-                isEditing={message.id === editingMessageId}
-                editContent={editContent}
-                onEditStart={handleEditStart}
-                onEditChange={handleEditChange}
-                onEditSave={handleEditSave}
-                onEditCancel={handleEditCancel}
-              />
-            );
-          } else if (message.role === "assistant") {
-            return (
-              <div key={message.id} className="flex flex-col max-w-4xl px-2 py-8">
-                {message.annotations && message.annotations.length > 0 && (
-                  <Accordion type="single" collapsible>
-                    <AccordionItem value="annotations">
-                      <AccordionTrigger>Show agent details</AccordionTrigger>
-                      <AccordionContent>
-                        <div className="flex flex-col gap-3">
-                          {message.annotations.map((annotation, index) => {
-                            const annotationObject = annotation as { type: string; value: string };
+    <div className="w-full h-full">
+      <Virtuoso
+        className="w-full h-full"
+        data={messages}
+        itemContent={(index, message) => {
+          return (
+            <div
+              className={`flex flex-col mx-auto max-w-4xl ${index == 0 && "pt-16"} ${index == messagesLength && "pb-48"}`}
+            >
+              {message.role === "user" ? (
+                <UserMessage key={message.id} message={message} onEditSave={onEditMessage} />
+              ) : message.role === "assistant" ? (
+                <div key={message.id} className="flex flex-col px-2 py-4">
+                  {message.annotations && message.annotations.length > 0 && (
+                    <AgentDetails annotations={message.annotations as { type: string; value: string }[]} />
+                  )}
 
-                            return (
-                              <div
-                                className="text-sm text-foreground/80 dark:text-muted-foreground font-light"
-                                key={index}
-                              >
-                                {annotationObject.value}
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </AccordionContent>
-                    </AccordionItem>
-                  </Accordion>
-                )}
-
-                {message.parts && message.parts.length > 0 && (
-                  <div className="prose dark:prose-invert max-w-none text-foreground/70 dark:text-foreground/85">
-                    {message.parts?.map((part, index) => {
-                      if (part.type === "reasoning") {
-                        return (
-                          <div className="text-sm text-foreground/80 dark:text-muted-foreground" key={index}>
-                            {part.reasoning}
-                          </div>
-                        );
-                      }
-                      if (part.type === "text") {
-                        return <MemoizedMarkdown content={part.text} id={message.id + index} key={index} />;
-                      }
-                    })}
-                  </div>
-                )}
-              </div>
-            );
-          }
-        })}
-      </div>
-
-      {isLoading && (
-        <div className="flex justify-center items-center space-x-1 pt-8 pb-48">
-          <div className="w-1 h-1 bg-muted-foreground rounded-full animate-pulse [animation-delay:-0.3s]"></div>
-          <div className="w-1 h-1 bg-muted-foreground rounded-full animate-pulse [animation-delay:-0.15s]"></div>
-          <div className="w-1 h-1 bg-muted-foreground rounded-full animate-pulse"></div>
-        </div>
-      )}
-    </ScrollArea>
+                  {message.parts && message.parts.length > 0 && (
+                    <div className="prose dark:prose-invert max-w-none text-foreground/70 dark:text-foreground/85">
+                      {message.parts?.map((part, index) => {
+                        if (part.type === "reasoning") {
+                          return (
+                            <div className="text-sm text-foreground/80 dark:text-muted-foreground" key={index}>
+                              {part.reasoning}
+                            </div>
+                          );
+                        }
+                        if (part.type === "text") {
+                          return <MemoizedMarkdown content={part.text} id={message.id + index} key={index} />;
+                        }
+                      })}
+                    </div>
+                  )}
+                </div>
+              ) : null}
+            </div>
+          );
+        }}
+        followOutput={true}
+      />
+    </div>
   );
-}
+});
+
+FullChat.displayName = "FullChat";
+
+export default FullChat;
