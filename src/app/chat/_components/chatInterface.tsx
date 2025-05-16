@@ -5,11 +5,10 @@ import { useChat } from "@ai-sdk/react";
 import ChatBox from "./chatBox";
 import FullChat from "./fullChat";
 import { useChatsStore } from "../../stores/chatsStore";
-import type { Message } from "ai";
+import type { Message, UIMessage } from "ai";
 import { useUser } from "@clerk/nextjs";
 import { useModelsStore } from "~/app/stores/modelsStore";
 import { useAgentStore } from "~/app/stores/agentStore";
-import { chats } from "~/server/db/schema";
 
 interface ChatInterfaceProps {
   id: string;
@@ -84,7 +83,7 @@ export default function ChatInterface({ id, initialMessages }: ChatInterfaceProp
 
   return (
     <div className="flex w-full mx-auto flex-col items-center h-full overflow-y-auto">
-      <FullChat messages={messages as Message[]} onEditMessage={onEditMessage} />
+      <FullChat messages={messages as UIMessage[]} onEditMessage={onEditMessage} />
 
       <ChatBox
         messagesPresent={messages.length > 0}

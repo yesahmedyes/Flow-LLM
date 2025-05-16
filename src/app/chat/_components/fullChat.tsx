@@ -4,6 +4,7 @@ import MemoizedMarkdown from "../../_components/memoizedMarkdown";
 import UserMessage from "./userMessage";
 import React from "react";
 import AgentDetails from "./agentDetails";
+import MessageSources from "./messageSources";
 
 interface FullChatProps {
   messages: UIMessage[];
@@ -30,6 +31,10 @@ const FullChat = React.memo(({ messages, onEditMessage }: FullChatProps) => {
                   {message.annotations && message.annotations.length > 0 && (
                     <AgentDetails annotations={message.annotations as { type: string; value: string }[]} />
                   )}
+
+                  <MessageSources
+                    sources={message.parts.filter((part) => part.type === "source").map((part) => part.source)}
+                  />
 
                   {message.parts && message.parts.length > 0 && (
                     <div className="prose dark:prose-invert max-w-none text-foreground/70 dark:text-foreground/85">

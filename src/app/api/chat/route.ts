@@ -27,6 +27,7 @@ import type { EmbedByTypeResponseEmbeddings } from "cohere-ai/api";
 import zep from "~/server/init/zep";
 import { z } from "zod";
 import { env } from "~/env";
+import perplexity from "~/server/init/perplexity";
 
 export const maxDuration = 60;
 
@@ -70,9 +71,7 @@ export async function POST(req: Request) {
       statusText: "OK",
       headers: { "Content-Type": "application/json" },
       async execute(dataStream) {
-        // let processedMessages = [...messages];
         const userMessage = messages[messages.length - 1]!.content;
-        // let enhancedContent = userMessage;
 
         const results: Results = {
           rewrittenQuery: "",
@@ -84,6 +83,8 @@ export async function POST(req: Request) {
         };
 
         const annotations: { type: string; value: string }[] = [];
+
+        const sources: { sourceType: "url"; id: string; url: string }[] = [];
 
         if (agent?.queryRewrite) {
           dataStream.writeMessageAnnotation({ type: "info", value: "Rewriting query..." });
@@ -162,11 +163,18 @@ export async function POST(req: Request) {
 
           const webSearchResult = await webSearch(messages);
 
-          if (webSearchResult.length > 0) {
-            results.webSearchResult = webSearchResult;
+          if (webSearchResult.sources.length > 0) {
+            for (const source of webSearchResult.sources) {
+              dataStream.writeSource(source);
+              sources.push(source);
+            }
+          }
 
-            dataStream.writeMessageAnnotation({ type: "web-search", value: webSearchResult });
-            annotations.push({ type: "web-search", value: webSearchResult });
+          if (webSearchResult.text.length > 0) {
+            results.webSearchResult = webSearchResult.text;
+
+            dataStream.writeMessageAnnotation({ type: "web-search", value: webSearchResult.text });
+            annotations.push({ type: "web-search", value: webSearchResult.text });
           }
         }
 
@@ -200,11 +208,17 @@ export async function POST(req: Request) {
               responseMessages: response.messages,
             });
 
-            if (annotations.length > 0 && mergedMessages.length > 0) {
-              const lastMessage = mergedMessages[mergedMessages.length - 1];
+            const lastMessage = mergedMessages[mergedMessages.length - 1];
 
-              if (lastMessage) {
+            if (lastMessage) {
+              if (annotations.length > 0) {
                 lastMessage.annotations = annotations;
+              }
+
+              if (sources.length > 0) {
+                for (const source of sources) {
+                  lastMessage.parts?.push({ type: "source", source: source });
+                }
               }
             }
 
@@ -285,16 +299,14 @@ const retrieveChunks = async (query: string, userId: string, reranking: boolean)
 
     const uniqueFiles = new Set(results.matches?.map((match) => match.metadata?.document_name));
 
-    const relevantChunks = results.matches
-      ?.filter((match) => match.score && match.score > 0.5)
-      .map((match) => match.metadata as Chunk);
+    const relevantChunks = results.matches.map((match) => match.metadata as Chunk);
 
-    if (reranking) {
+    if (relevantChunks.length > 10 && reranking) {
       const response = await cohere.rerank({
         model: "rerank-v3.5",
         query: query,
         documents: relevantChunks.map((chunk) => chunk.text),
-        topN: relevantChunks.length / 2,
+        topN: 10,
       });
 
       const rerankedChunks: Chunk[] = [];
@@ -322,12 +334,12 @@ const webSearch = async (messages: UIMessage[]) => {
   });
 
   const result = await generateText({
-    model: openai("perplexity/sonar:online"),
+    model: perplexity("perplexity/sonar:online"),
     system: webSearchPrompt,
     messages: [{ role: "user", content: searchQuery.text }],
   });
 
-  return result.text;
+  return { text: result.text, sources: result.sources };
 };
 
 const getFinalMessages = (messages: UIMessage[], results: Results) => {

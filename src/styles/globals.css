@@ -132,6 +132,7 @@
 
   ::-webkit-scrollbar {
     width: 6px;
+    height: 6px;
     background-color: transparent;
   }
 
@@ -162,4 +163,12 @@
 
 .animate-blink {
   animation: blink 1s step-end infinite;
+}
+
+.no-scrollbar {
+  scrollbar-width: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
 }
