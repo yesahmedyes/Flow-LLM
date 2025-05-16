@@ -1,12 +1,12 @@
-import { type Message } from "ai";
+import { type UIMessage } from "ai";
 import { useRef, useState } from "react";
-import { Pencil } from "lucide-react";
+import { Pencil, ChevronDown, ChevronUp } from "lucide-react";
 import TextareaAutosize from "react-textarea-autosize";
 import { Button } from "~/app/_components/ui/button";
 import React from "react";
 
 interface UserMessageProps {
-  message: Message;
+  message: UIMessage;
   onEditSave: (messageId: string, content: string) => void;
 }
 
@@ -16,8 +16,17 @@ const UserMessage = React.memo((props: UserMessageProps) => {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const [isEditing, setIsEditing] = useState(false);
-
   const [editContent, setEditContent] = useState(message.content);
+
+  const [isCollapsed, setIsCollapsed] = useState(true);
+
+  const isLongMessage = message.content.length > 250;
+
+  const getCollapsedContent = () => {
+    if (!isCollapsed || !isLongMessage) return message.content;
+
+    return message.content.slice(0, 250) + "...";
+  };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -66,7 +75,25 @@ const UserMessage = React.memo((props: UserMessageProps) => {
         </div>
       ) : (
         <div className="max-w-3xl rounded-2xl px-5 py-3 leading-relaxed bg-muted text-foreground font-light dark:font-normal whitespace-pre-wrap relative">
-          {message.content}
+          {getCollapsedContent()}
+
+          {isLongMessage && (
+            <button
+              onClick={() => setIsCollapsed(!isCollapsed)}
+              className="mt-2 flex items-center text-xs text-muted-foreground hover:text-foreground cursor-pointer"
+              aria-label={isCollapsed ? "Show more" : "Show less"}
+            >
+              {isCollapsed ? (
+                <>
+                  <ChevronDown size={14} className="mr-1" /> Show more
+                </>
+              ) : (
+                <>
+                  <ChevronUp size={14} className="mr-1" /> Show less
+                </>
+              )}
+            </button>
+          )}
 
           <button
             onClick={() => setIsEditing(true)}

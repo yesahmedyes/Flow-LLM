@@ -5,6 +5,18 @@ import { db } from "~/server/db";
 import { files } from "~/server/db/schema";
 import { eq, desc, and } from "drizzle-orm";
 import { enqueueTask, removeTask } from "~/lib/utils/redisHelpers";
+import {
+  DeleteObjectCommand,
+  DeleteObjectsCommand,
+  ListObjectsV2Command,
+  S3Client,
+  type _Object,
+} from "@aws-sdk/client-s3";
+import { env } from "~/env";
+import pinecone from "~/server/init/pinecone";
+import { s3Client } from "~/server/init/aws";
+import { recursivelyDeleteFolder } from "~/lib/utils/s3";
+import { deleteFromParentDocument } from "~/lib/utils/pinecone";
 
 const fileSchema = z.object({
   fileUrl: z.string(),
@@ -80,10 +92,19 @@ export const filesRouter = createTRPCRouter({
   deleteFile: protectedProcedure.input(z.object({ fileUrl: z.string() })).mutation(async ({ ctx, input }) => {
     const { user } = ctx;
 
-    const deletePromise = db.delete(files).where(and(eq(files.fileUrl, input.fileUrl), eq(files.userId, user.id)));
+    const promisesToResolve = [];
 
-    const removeTaskPromise = removeTask(queueName, user.id, input.fileUrl);
+    promisesToResolve.push(db.delete(files).where(and(eq(files.fileUrl, input.fileUrl), eq(files.userId, user.id))));
+    promisesToResolve.push(removeTask(queueName, user.id, input.fileUrl));
 
-    await Promise.all([deletePromise, removeTaskPromise]);
+    const fileUrlParts = input.fileUrl.split("/");
+    const folderKey = fileUrlParts[fileUrlParts.length - 2];
+
+    if (folderKey) {
+      promisesToResolve.push(recursivelyDeleteFolder(user.id + "/" + folderKey));
+      promisesToResolve.push(deleteFromParentDocument({ prefix: folderKey, userId: user.id }));
+    }
+
+    await Promise.all(promisesToResolve);
   }),
 });

@@ -1,9 +1,9 @@
-import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
+import { PutObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import crypto from "crypto";
-import { env } from "~/env";
+import { getFileUrl, s3Client } from "~/server/init/aws";
 
 export async function POST(request: Request) {
   try {
@@ -15,15 +15,7 @@ export async function POST(request: Request) {
 
     const { fileName, fileType } = (await request.json()) as { fileName: string; fileType: string };
 
-    const fileKey = `${userId}/${crypto.randomUUID()}-${fileName}`;
-
-    const s3Client = new S3Client({
-      region: env.AWS_REST_REGION as string,
-      credentials: {
-        accessKeyId: env.AWS_REST_ACCESS_KEY as string,
-        secretAccessKey: env.AWS_REST_SECRET_KEY as string,
-      },
-    });
+    const fileKey = `${userId}/${crypto.randomUUID()}/${fileName}`;
 
     const command = new PutObjectCommand({
       Bucket: "flowllm-bucket",
@@ -33,7 +25,7 @@ export async function POST(request: Request) {
 
     const presignedUrl = await getSignedUrl(s3Client, command, { expiresIn: 3600 });
 
-    const fileUrl = `https://flowllm-bucket.s3.${env.AWS_REST_REGION}.amazonaws.com/${fileKey}`;
+    const fileUrl = getFileUrl(fileKey);
 
     return NextResponse.json({ presignedUrl, fileUrl });
   } catch (error) {

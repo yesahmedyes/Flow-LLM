@@ -1,4 +1,4 @@
-import { type Message } from "ai";
+import { type UIMessage } from "ai";
 import { Virtuoso } from "react-virtuoso";
 import MemoizedMarkdown from "../../_components/memoizedMarkdown";
 import UserMessage from "./userMessage";
@@ -6,7 +6,7 @@ import React from "react";
 import AgentDetails from "./agentDetails";
 
 interface FullChatProps {
-  messages: Message[];
+  messages: UIMessage[];
   onEditMessage: (messageId: string, content: string) => void;
 }
 

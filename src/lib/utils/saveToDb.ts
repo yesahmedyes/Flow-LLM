@@ -1,9 +1,9 @@
-import type { Message } from "ai";
+import type { UIMessage } from "ai";
 import { db } from "~/server/db";
 import { chats, files } from "~/server/db/schema";
 import type { FileData } from "../types/db-types";
 
-export async function saveChat(data: { id: string; messages: Message[]; userId: string }) {
+export async function saveChat(data: { id: string; messages: UIMessage[]; userId: string }) {
   await db
     .insert(chats)
     .values({

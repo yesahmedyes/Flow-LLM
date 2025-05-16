@@ -1,4 +1,4 @@
-import type { Message } from "ai";
+import type { UIMessage } from "ai";
 import { sql } from "drizzle-orm";
 import { blob, index, integer, sqliteTableCreator, text, uniqueIndex } from "drizzle-orm/sqlite-core";
 
@@ -13,7 +13,7 @@ export const chats = createTable(
       .$defaultFn(() => crypto.randomUUID()),
     userId: text({ length: 256 }).notNull(), // Clerk user ID
     name: text({ length: 256 }).notNull().default("New Chat"),
-    messages: blob({ mode: "json" }).$type<Message[]>().notNull(),
+    messages: blob({ mode: "json" }).$type<UIMessage[]>().notNull(),
     createdAt: integer({ mode: "timestamp" })
       .default(sql`(unixepoch())`)
       .notNull(),

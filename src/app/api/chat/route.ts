@@ -1,5 +1,14 @@
 import openai from "~/server/init/openai";
-import { appendResponseMessages, generateText, createDataStreamResponse, streamText, type Message, tool } from "ai";
+import {
+  appendResponseMessages,
+  generateText,
+  createDataStreamResponse,
+  streamText,
+  tool,
+  type CoreMessage,
+  type UIMessage,
+  convertToCoreMessages,
+} from "ai";
 import { saveChat } from "~/lib/utils/saveToDb";
 import { auth } from "@clerk/nextjs/server";
 import {
@@ -17,12 +26,13 @@ import cohere from "~/server/init/cohere";
 import type { EmbedByTypeResponseEmbeddings } from "cohere-ai/api";
 import zep from "~/server/init/zep";
 import { z } from "zod";
+import { env } from "~/env";
 
 export const maxDuration = 60;
 
 type ChatRequest = {
   id: string;
-  messages: Message[];
+  messages: UIMessage[];
   model: string;
   agent?: Agent;
 };
@@ -32,7 +42,14 @@ type Results = {
   thoughtProcess: string;
   userMemories: string;
   chunks: string;
+  images: string[];
   webSearchResult: string;
+};
+
+type Chunk = {
+  text: string;
+  image_path: string;
+  document_name: string;
 };
 
 export async function POST(req: Request) {
@@ -62,6 +79,7 @@ export async function POST(req: Request) {
           thoughtProcess: "",
           userMemories: "",
           chunks: "",
+          images: [],
           webSearchResult: "",
         };
 
@@ -117,7 +135,7 @@ export async function POST(req: Request) {
           annotations.push({ type: "info", value: "Retrieving relevant chunks..." });
 
           const { files, chunks } = await retrieveChunks(
-            results.rewrittenQuery ?? userMessage,
+            results.rewrittenQuery.length > 0 ? results.rewrittenQuery : userMessage,
             userId,
             agent?.chunkReranking,
           );
@@ -128,10 +146,13 @@ export async function POST(req: Request) {
           }
 
           if (chunks && chunks.length > 0) {
-            results.chunks = chunks;
+            const imageChunks = chunks.filter((chunk) => chunk.image_path && chunk.image_path !== "");
 
-            dataStream.writeMessageAnnotation({ type: "rag-context", value: chunks });
-            annotations.push({ type: "rag-context", value: chunks });
+            results.chunks = chunks.map((chunk) => chunk.text).join("\n\n");
+            results.images = imageChunks.map((chunk) => chunk.image_path);
+
+            dataStream.writeMessageAnnotation({ type: "rag-context", value: results.chunks });
+            annotations.push({ type: "rag-context", value: results.chunks });
           }
         }
 
@@ -149,7 +170,7 @@ export async function POST(req: Request) {
           }
         }
 
-        const finalMessages = agent ? getFinalMessages(messages, results) : messages;
+        const finalMessages = agent ? getFinalMessages(messages, results) : convertToCoreMessages(messages);
 
         const result = streamText({
           model: openai(model),
@@ -175,7 +196,7 @@ export async function POST(req: Request) {
           maxSteps: 2,
           async onFinish({ response }) {
             const mergedMessages = appendResponseMessages({
-              messages: messages as Message[],
+              messages: messages,
               responseMessages: response.messages,
             });
 
@@ -187,7 +208,7 @@ export async function POST(req: Request) {
               }
             }
 
-            await saveChat({ id, messages: mergedMessages, userId });
+            await saveChat({ id, messages: mergedMessages as UIMessage[], userId });
           },
         });
 
@@ -208,31 +229,31 @@ export async function POST(req: Request) {
   }
 }
 
-const queryRewrite = async (messages: Message[]) => {
+const queryRewrite = async (messages: UIMessage[]) => {
   const result = await generateText({
     model: openai("openai/gpt-4.1-nano"),
     system: queryRewritePrompt,
-    messages: messages,
+    messages: convertToCoreMessages(messages),
   });
 
   return result.text;
 };
 
-const chainOfThought = async (messages: Message[]) => {
+const chainOfThought = async (messages: UIMessage[]) => {
   const result = await generateText({
     model: openai("openai/gpt-4.1-mini"),
     system: chainOfThoughtPrompt,
-    messages: messages,
+    messages: convertToCoreMessages(messages),
   });
 
   return result.text;
 };
 
-const retrieveMemory = async (messages: Message[], userId: string) => {
+const retrieveMemory = async (messages: UIMessage[], userId: string) => {
   const result = await generateText({
     model: openai("openai/gpt-4.1-nano"),
     system: retrieveMemoryPrompt,
-    messages: messages,
+    messages: convertToCoreMessages(messages),
   });
 
   const searchResult = await zep.graph.search({ userId, query: result.text });
@@ -257,39 +278,47 @@ const retrieveChunks = async (query: string, userId: string, reranking: boolean)
     const index = pinecone.Index("flowllm-files").namespace(userId);
 
     const results = await index.query({
-      topK: reranking ? 10 : 5,
+      topK: reranking ? 20 : 10,
       vector: embedding,
       includeMetadata: true,
     });
 
-    const uniqueFiles = new Set(results.matches?.map((match) => match.metadata?.object_name));
-    const relevantChunks = results.matches?.map((match) => match.metadata?.text ?? "");
+    const uniqueFiles = new Set(results.matches?.map((match) => match.metadata?.document_name));
+
+    const relevantChunks = results.matches
+      ?.filter((match) => match.score && match.score > 0.5)
+      .map((match) => match.metadata as Chunk);
 
     if (reranking) {
       const response = await cohere.rerank({
         model: "rerank-v3.5",
         query: query,
-        documents: relevantChunks as string[],
-        topN: 5,
-        returnDocuments: true,
+        documents: relevantChunks.map((chunk) => chunk.text),
+        topN: relevantChunks.length / 2,
       });
 
-      const rerankedChunks = response.results.map((result) => result.document?.text);
+      const rerankedChunks: Chunk[] = [];
 
-      return { files: uniqueFiles.size, chunks: rerankedChunks.join("\n\n") };
+      for (const result of response.results) {
+        if (result.index && result.index < relevantChunks.length) {
+          rerankedChunks.push(relevantChunks[result.index]!);
+        }
+      }
+
+      return { files: uniqueFiles.size, chunks: rerankedChunks };
     } else {
-      return { files: uniqueFiles.size, chunks: relevantChunks.join("\n\n") };
+      return { files: uniqueFiles.size, chunks: relevantChunks };
     }
   }
 
-  return { files: 0, chunks: "" };
+  return { files: 0, chunks: [] };
 };
 
-const webSearch = async (messages: Message[]) => {
+const webSearch = async (messages: UIMessage[]) => {
   const searchQuery = await generateText({
     model: openai("openai/gpt-4.1-nano"),
     system: webSearchQueryPrompt,
-    messages: messages,
+    messages: convertToCoreMessages(messages),
   });
 
   const result = await generateText({
@@ -301,8 +330,10 @@ const webSearch = async (messages: Message[]) => {
   return result.text;
 };
 
-const getFinalMessages = (messages: Message[], results: Results) => {
-  let finalMessage = messages[messages.length - 1]!.content;
+const getFinalMessages = (messages: UIMessage[], results: Results) => {
+  const final = messages[messages.length - 1]!;
+
+  let finalMessage = final.content;
 
   if (results.rewrittenQuery.length > 0) {
     finalMessage += "\n\n" + "Rewritten Query: " + results.rewrittenQuery;
@@ -324,5 +355,23 @@ const getFinalMessages = (messages: Message[], results: Results) => {
     finalMessage += "\n\n" + "Web Search Result: " + results.webSearchResult;
   }
 
-  return [...messages.slice(0, -1), { role: "user", content: finalMessage } as Message];
+  const finalResponse = [
+    ...convertToCoreMessages(messages.slice(0, -1)),
+    {
+      id: final.id,
+      role: final.role,
+      content: [
+        {
+          type: "text",
+          text: finalMessage,
+        },
+        ...results.images.map((path) => ({
+          type: "image",
+          image: new URL(`https://flowllm-bucket.s3.${env.AWS_REST_REGION}.amazonaws.com/${path}`),
+        })),
+      ],
+    } as CoreMessage,
+  ];
+
+  return finalResponse;
 };

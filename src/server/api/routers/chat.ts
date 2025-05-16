@@ -1,10 +1,10 @@
 import { z } from "zod";
 
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
-import { type Message } from "ai";
 import { db } from "~/server/db";
 import { chats } from "~/server/db/schema";
 import { eq, desc, and } from "drizzle-orm";
+import type { UIMessage } from "ai";
 
 export const chatRouter = createTRPCRouter({
   getChatById: protectedProcedure.input(z.object({ id: z.string() })).mutation(async ({ ctx, input }) => {
@@ -48,7 +48,7 @@ export const chatRouter = createTRPCRouter({
       };
     }),
   upsertChat: protectedProcedure
-    .input(z.object({ id: z.string(), messages: z.array(z.custom<Message>()) }))
+    .input(z.object({ id: z.string(), messages: z.array(z.custom<UIMessage>()) }))
     .mutation(async ({ ctx, input }) => {
       const { user } = ctx;
 

@@ -1,15 +1,14 @@
 # Improvements
 
 - [ ] Add ability to upload Image and File Attachments in chat
-- [ ] Upload images retrieved from RAG in agent pipeline
-- [ ] Delete vector embeddings for the deleted files
 - [ ] Show reasoning, sources, and errors in response
-- [ ] User message should be collpased if it's too long
+- [ ] Make new chat load faster
 
 # Architecture Improvements
 
 - [ ] Make the AWS files private and only accessible using a temporary presigned URL
 - [ ] User should be able to delete nodes and edges in the graph
+- [ ] Explore using Kafka for job queue after file upload
 
 # Stretch Goals
 
