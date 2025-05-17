@@ -16,7 +16,7 @@ export const useModelsStore = create<ModelsStore>()((set) => ({
   allModels: [],
   preferredModels: [],
   contentLoaded: false,
-  selectedModel: "openai/gpt-4o-mini",
+  selectedModel: "openai/gpt-4.1-nano",
   setAllModels: (models) => set({ allModels: models }),
   setPreferredModels: (models) => {
     set({ preferredModels: models });

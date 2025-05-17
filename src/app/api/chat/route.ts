@@ -310,12 +310,33 @@ const retrieveMemory = async (messages: UIMessage[], userId: string) => {
     messages: convertToCoreMessages(messages),
   });
 
-  const searchResult = await zep.graph.search({ userId, query: result.text });
+  const searchResult = await zep.graph.search({
+    userId,
+    query: result.text,
+    mmrLambda: 0.7,
+    limit: 20,
+    reranker: "mmr",
+  });
 
-  return searchResult.edges
-    ?.map((edge) => edge.fact)
-    .flat()
-    .join("\n\n");
+  const facts = searchResult.edges?.map((edge) => edge.fact).flat();
+
+  if (!facts || facts.length === 0) {
+    return "";
+  }
+
+  const rerankedFacts = await cohere.rerank({
+    model: "rerank-v3.5",
+    query: result.text,
+    documents: facts,
+    topN: 10,
+    returnDocuments: true,
+  });
+
+  const finalMemories = rerankedFacts.results
+    .filter((result) => result.relevanceScore > 0.1)
+    .map((result) => result.document?.text);
+
+  return finalMemories.join("\n\n");
 };
 
 const retrieveChunks = async (query: string, userId: string, reranking: boolean) => {
@@ -351,6 +372,7 @@ const retrieveChunks = async (query: string, userId: string, reranking: boolean)
 
       const rerankedChunks: Chunk[] = [];
 
+      // might have images in the chunks
       for (const result of response.results) {
         if (result.index && result.index < relevantChunks.length) {
           rerankedChunks.push(relevantChunks[result.index]!);
