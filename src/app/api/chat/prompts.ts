@@ -36,31 +36,15 @@ When rewriting, follow these guidelines:
 5. **Maintain Tone and Formality**  
    • Match the users tone where appropriate (e.g., if they're casual, retain contractions; if formal, use full phrasing).`;
 
-export const chainOfThoughtPrompt = `You are a “Reasoning Outline Generator.” When given a problem statement, produce a numbered, hierarchical outline of the logical steps and sub-steps one would follow to resolve the problem, but do not carry out any computations or provide the final answer.
+export const chainOfThoughtPrompt = `You are a reasoning model that always thinks internally. For each user query:
 
-Structure your output as follows:
+1. Emit each reasoning step wrapped in <think>…</think> tags.
+2. Do NOT produce any final answer, summary, or explanation outside these tags.
+3. Stop immediately after your last <think> step.
 
-1. **Problem Restatement**  
-   - Briefly rephrase the problem to confirm understanding.
-
-2. **Identify Known Information**  
-   - List all facts, data, and constraints provided.
-
-3. **Determine Goals**  
-   - Specify what constitutes a successful solution.
-
-4. **Outline Solution Strategy**  
-   - Break down the overall approach into major phases or methods.
-
-5. **Detail Sub-steps**  
-   - For each major phase, enumerate the specific tasks or checks required.
-
-6. **Anticipate Challenges**  
-   - Note potential pitfalls or edge cases to watch for.
-
-7. **Validation Plan**  
-   - Describe how to verify each substep's correctness and the final solution's validity.
-`;
+I REPEAT, DO NOT PRODUCE ANY FINAL ANSWER, SUMMARY, OR EXPLANATION OUTSIDE THE <think> TAGS.
+   
+Begin your reasoning now:`;
 
 export const webSearchPrompt = `You are an intelligent research assistant specialized in deep web research. Your task is to search the internet to find accurate, up-to-date, and credible information that directly addresses the user's query. You must:
 

@@ -5,6 +5,7 @@ import UserMessage from "./userMessage";
 import React from "react";
 import AgentDetails from "./agentDetails";
 import MessageSources from "./messageSources";
+import MessageReasoning from "./messageReasoning";
 
 interface FullChatProps {
   messages: UIMessage[];
@@ -27,25 +28,12 @@ const FullChat = React.memo(({ messages, onEditMessage }: FullChatProps) => {
               {message.role === "user" ? (
                 <UserMessage key={message.id} message={message} onEditSave={onEditMessage} />
               ) : message.role === "assistant" ? (
-                <div key={message.id} className="flex flex-col px-2 py-4">
-                  {message.annotations && message.annotations.length > 0 && (
-                    <AgentDetails annotations={message.annotations as { type: string; value: string }[]} />
-                  )}
-
-                  <MessageSources
-                    sources={message.parts.filter((part) => part.type === "source").map((part) => part.source)}
-                  />
+                <div key={message.id} className="flex flex-col px-2 py-3">
+                  <AgentDetails message={message} />
 
                   {message.parts && message.parts.length > 0 && (
                     <div className="prose dark:prose-invert max-w-none text-foreground/70 dark:text-foreground/85">
                       {message.parts?.map((part, index) => {
-                        if (part.type === "reasoning") {
-                          return (
-                            <div className="text-sm text-foreground/80 dark:text-muted-foreground" key={index}>
-                              {part.reasoning}
-                            </div>
-                          );
-                        }
                         if (part.type === "text") {
                           return <MemoizedMarkdown content={part.text} id={message.id + index} key={index} />;
                         }

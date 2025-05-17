@@ -14,7 +14,7 @@ function AccordionItem({ className, ...props }: React.ComponentProps<typeof Acco
   return (
     <AccordionPrimitive.Item
       data-slot="accordion-item"
-      className={cn("border-b last:border-b-0 pb-2", className)}
+      className={cn("border-b last:border-b-0", className)}
       {...props}
     />
   );
@@ -26,7 +26,7 @@ function AccordionTrigger({ className, children, ...props }: React.ComponentProp
       <AccordionPrimitive.Trigger
         data-slot="accordion-trigger"
         className={cn(
-          "focus-visible:border-ring cursor-pointer font-normal hover:underline focus-visible:ring-ring/50 flex pb-3 flex-1 items-start justify-start gap-2 rounded-md text-left text-sm transition-all outline-none focus-visible:ring-[3px] disabled:pointer-events-none disabled:opacity-50 [&[data-state=open]>svg]:rotate-180",
+          "focus-visible:border-ring cursor-pointer font-normal hover:underline focus-visible:ring-ring/50 flex flex-1 items-start justify-start gap-2 rounded-md text-left text-sm transition-all outline-none focus-visible:ring-[3px] disabled:pointer-events-none disabled:opacity-50 [&[data-state=open]>svg]:rotate-180",
           className,
         )}
         {...props}
@@ -42,10 +42,10 @@ function AccordionContent({ className, children, ...props }: React.ComponentProp
   return (
     <AccordionPrimitive.Content
       data-slot="accordion-content"
-      className="data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down overflow-hidden text-sm pt-1"
+      className="data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down overflow-hidden text-sm py-1"
       {...props}
     >
-      <div className={cn("pt-0 pb-3", className)}>{children}</div>
+      <div className={cn("py-3", className)}>{children}</div>
     </AccordionPrimitive.Content>
   );
 }

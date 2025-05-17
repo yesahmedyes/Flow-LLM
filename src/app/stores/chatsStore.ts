@@ -1,4 +1,4 @@
-import type { Message } from "ai";
+import type { UIMessage } from "ai";
 import { create } from "zustand";
 import type { chats } from "~/server/db/schema";
 
@@ -9,7 +9,7 @@ interface ChatsStore {
   addChats: (chats: Chat[]) => void;
   getChatById: (chatId: string) => Chat | null;
   addChat: (chat: Chat) => void;
-  updateChatById: (chatId: string, messages: Message[], userId: string) => void;
+  updateChatById: (chatId: string, messages: UIMessage[], userId: string) => void;
   removeChatById: (chatId: string) => void;
   updateChatName: (chatId: string, name: string) => void;
 }
@@ -41,7 +41,7 @@ export const useChatsStore = create<ChatsStore>((set) => ({
 
       return { chats: [...state.chats, chat] };
     }),
-  updateChatById: (chatId: string, messages: Message[], userId: string) => {
+  updateChatById: (chatId: string, messages: UIMessage[], userId: string) => {
     set((state) => {
       const chatExists = state.chats.some((c) => c.id === chatId);
 

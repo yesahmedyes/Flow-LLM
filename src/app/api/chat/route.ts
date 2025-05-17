@@ -1,4 +1,3 @@
-import openai from "~/server/init/openai";
 import {
   appendResponseMessages,
   generateText,
@@ -8,6 +7,10 @@ import {
   type CoreMessage,
   type UIMessage,
   convertToCoreMessages,
+  createDataStream,
+  type LanguageModelV1StreamPart,
+  type LanguageModelV1Middleware,
+  wrapLanguageModel,
 } from "ai";
 import { saveChat } from "~/lib/utils/saveToDb";
 import { auth } from "@clerk/nextjs/server";
@@ -28,6 +31,7 @@ import zep from "~/server/init/zep";
 import { z } from "zod";
 import { env } from "~/env";
 import perplexity from "~/server/init/perplexity";
+import openrouter from "~/server/init/openrouter";
 
 export const maxDuration = 60;
 
@@ -71,6 +75,11 @@ export async function POST(req: Request) {
       statusText: "OK",
       headers: { "Content-Type": "application/json" },
       async execute(dataStream) {
+        dataStream.writeData({
+          type: "text",
+          text: "Hello",
+        });
+
         const userMessage = messages[messages.length - 1]!.content;
 
         const results: Results = {
@@ -103,18 +112,32 @@ export async function POST(req: Request) {
 
           const start_time = Date.now();
 
-          const thoughtProcess = await chainOfThought(messages);
-          results.thoughtProcess = thoughtProcess;
+          const result = streamText({
+            model: wrapLanguageModel({
+              model: openrouter("deepseek/deepseek-r1"),
+              middleware: reasoningOnlyMiddleware,
+            }),
+            system: chainOfThoughtPrompt,
+            messages: convertToCoreMessages(messages),
+          });
+
+          result.mergeIntoDataStream(dataStream, {
+            sendReasoning: true,
+            experimental_sendFinish: false,
+          });
+
+          const thoughtProcess = await result.reasoning;
 
           const end_time = Date.now();
 
           const time_taken = (end_time - start_time) / 1000;
 
-          dataStream.writeMessageAnnotation({ type: "info", value: `Thought for: ${time_taken.toFixed(2)} seconds` });
-          annotations.push({ type: "info", value: `Thought for: ${time_taken.toFixed(2)} seconds` });
+          if (thoughtProcess && thoughtProcess.length > 0) {
+            results.thoughtProcess = thoughtProcess;
 
-          dataStream.writeMessageAnnotation({ type: "chain-of-thought", value: thoughtProcess });
-          annotations.push({ type: "chain-of-thought", value: thoughtProcess });
+            dataStream.writeMessageAnnotation({ type: "info", value: `Thought for: ${time_taken.toFixed(2)} seconds` });
+            annotations.push({ type: "info", value: `Thought for: ${time_taken.toFixed(2)} seconds` });
+          }
         }
 
         if (agent?.memory) {
@@ -181,7 +204,7 @@ export async function POST(req: Request) {
         const finalMessages = agent ? getFinalMessages(messages, results) : convertToCoreMessages(messages);
 
         const result = streamText({
-          model: openai(model),
+          model: openrouter(model),
           system: systemPrompt,
           messages: finalMessages,
           tools: {
@@ -220,6 +243,14 @@ export async function POST(req: Request) {
                   lastMessage.parts?.push({ type: "source", source: source });
                 }
               }
+
+              if (results.thoughtProcess.length > 0) {
+                lastMessage.parts?.push({
+                  type: "reasoning",
+                  reasoning: results.thoughtProcess,
+                  details: [],
+                });
+              }
             }
 
             await saveChat({ id, messages: mergedMessages as UIMessage[], userId });
@@ -243,20 +274,29 @@ export async function POST(req: Request) {
   }
 }
 
-const queryRewrite = async (messages: UIMessage[]) => {
-  const result = await generateText({
-    model: openai("openai/gpt-4.1-nano"),
-    system: queryRewritePrompt,
-    messages: convertToCoreMessages(messages),
-  });
+const reasoningOnlyMiddleware: LanguageModelV1Middleware = {
+  wrapStream: async ({ doStream, params }) => {
+    const { stream, ...rest } = await doStream();
 
-  return result.text;
+    const reasoningFilterStream = new TransformStream<LanguageModelV1StreamPart, LanguageModelV1StreamPart>({
+      transform(chunk, controller) {
+        if (chunk.type === "reasoning") {
+          controller.enqueue(chunk);
+        }
+      },
+    });
+
+    return {
+      stream: stream.pipeThrough(reasoningFilterStream),
+      ...rest,
+    };
+  },
 };
 
-const chainOfThought = async (messages: UIMessage[]) => {
+const queryRewrite = async (messages: UIMessage[]) => {
   const result = await generateText({
-    model: openai("openai/gpt-4.1-mini"),
-    system: chainOfThoughtPrompt,
+    model: openrouter("openai/gpt-4.1-nano"),
+    system: queryRewritePrompt,
     messages: convertToCoreMessages(messages),
   });
 
@@ -265,7 +305,7 @@ const chainOfThought = async (messages: UIMessage[]) => {
 
 const retrieveMemory = async (messages: UIMessage[], userId: string) => {
   const result = await generateText({
-    model: openai("openai/gpt-4.1-nano"),
+    model: openrouter("openai/gpt-4.1-nano"),
     system: retrieveMemoryPrompt,
     messages: convertToCoreMessages(messages),
   });
@@ -328,7 +368,7 @@ const retrieveChunks = async (query: string, userId: string, reranking: boolean)
 
 const webSearch = async (messages: UIMessage[]) => {
   const searchQuery = await generateText({
-    model: openai("openai/gpt-4.1-nano"),
+    model: openrouter("openai/gpt-4.1-nano"),
     system: webSearchQueryPrompt,
     messages: convertToCoreMessages(messages),
   });
