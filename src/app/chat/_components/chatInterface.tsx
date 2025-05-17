@@ -83,7 +83,11 @@ export default function ChatInterface({ id, initialMessages }: ChatInterfaceProp
 
   return (
     <div className="flex w-full mx-auto flex-col items-center h-full overflow-y-auto">
-      <FullChat messages={messages as UIMessage[]} onEditMessage={onEditMessage} />
+      <FullChat
+        messages={messages as UIMessage[]}
+        onEditMessage={onEditMessage}
+        isLoading={status === "streaming" || status === "submitted"}
+      />
 
       <ChatBox
         messagesPresent={messages.length > 0}

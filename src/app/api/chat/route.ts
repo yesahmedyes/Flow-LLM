@@ -11,6 +11,7 @@ import {
   type LanguageModelV1StreamPart,
   type LanguageModelV1Middleware,
   wrapLanguageModel,
+  smoothStream,
 } from "ai";
 import { saveChat } from "~/lib/utils/saveToDb";
 import { auth } from "@clerk/nextjs/server";
@@ -207,6 +208,10 @@ export async function POST(req: Request) {
           model: openrouter(model),
           system: systemPrompt,
           messages: finalMessages,
+          experimental_transform: smoothStream({
+            delayInMs: 20,
+            chunking: "line",
+          }),
           tools: {
             addMemory: tool({
               description: addMemoryPrompt,
