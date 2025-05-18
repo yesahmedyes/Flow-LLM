@@ -130,43 +130,45 @@ const ChatBox = React.memo((props: ChatBoxProps) => {
 
         {uploadingFiles.length > 0 && (
           <div className="px-3 pt-1 pb-0.5 flex flex-wrap gap-2.5">
-            {uploadingFiles.map((file) => (
-              <div
-                key={file.id}
-                className="flex items-center justify-between text-xs w-[50px] h-[50px] border rounded-md relative"
-              >
-                {file.status === "uploading" && (
-                  <>
-                    <div className="text-muted-foreground text-center w-full">{file.progress}%</div>
+            {uploadingFiles
+              .filter((file) => file.status !== "error")
+              .map((file) => (
+                <div
+                  key={file.id}
+                  className="flex items-center justify-between text-xs w-[50px] h-[50px] border rounded-md relative"
+                >
+                  {file.status === "uploading" && (
+                    <>
+                      <div className="text-muted-foreground text-center w-full">{file.progress}%</div>
 
-                    <X
-                      size={16}
-                      className="absolute top-0 right-0 -mr-1 -mt-1 cursor-pointer stroke-foreground border border-foreground/50 p-0.5 bg-background rounded-full"
-                      onClick={() => cancelUpload(file.id)}
-                    />
-                  </>
-                )}
-                {file.status === "completed" && (
-                  <>
-                    {file.url && (
-                      <div className="h-[50px] w-[50px] overflow-hidden rounded-md">
-                        {file.file.type.includes("image") ? (
-                          <img src={file.url} alt={file.file.name} className="h-full w-full object-cover" />
-                        ) : (
-                          <iframe src={file.url} title={file.file.name} className="h-full w-full" />
-                        )}
-                      </div>
-                    )}
+                      <X
+                        size={16}
+                        className="absolute top-0 right-0 -mr-1 -mt-1 cursor-pointer stroke-foreground border border-foreground/50 p-0.5 bg-background rounded-full"
+                        onClick={() => cancelUpload(file.id)}
+                      />
+                    </>
+                  )}
+                  {file.status === "completed" && (
+                    <>
+                      {file.url && (
+                        <div className="h-[50px] w-[50px] overflow-hidden rounded-md">
+                          {file.file.type.includes("image") ? (
+                            <img src={file.url} alt={file.file.name} className="h-full w-full object-cover" />
+                          ) : (
+                            <iframe src={file.url} title={file.file.name} className="h-full w-full" />
+                          )}
+                        </div>
+                      )}
 
-                    <X
-                      size={16}
-                      className="absolute top-0 right-0 -mr-1 -mt-1 cursor-pointer stroke-foreground border border-foreground/50 p-0.5 bg-background rounded-full"
-                      onClick={() => removeUploadedFile(file.id)}
-                    />
-                  </>
-                )}
-              </div>
-            ))}
+                      <X
+                        size={16}
+                        className="absolute top-0 right-0 -mr-1 -mt-1 cursor-pointer stroke-foreground border border-foreground/50 p-0.5 bg-background rounded-full"
+                        onClick={() => removeUploadedFile(file.id)}
+                      />
+                    </>
+                  )}
+                </div>
+              ))}
           </div>
         )}
 
