@@ -71,7 +71,7 @@ export const useChatsStore = create<ChatsStore>((set) => ({
   },
   updateChatName: (chatId: string, name: string) => {
     set((state) => ({
-      chats: state.chats.map((chat) => (chat.id === chatId ? { ...chat, name, updatedAt: new Date() } : chat)),
+      chats: state.chats.map((chat) => (chat.id === chatId ? { ...chat, name } : chat)),
     }));
   },
 }));

@@ -72,7 +72,11 @@ export default function ChatInterface({ id, initialMessages }: ChatInterfaceProp
 
   const { updateChatById } = useChatsStore();
 
-  const totalMessages = useRef(messages.length);
+  const totalMessages = useRef(initialMessages.length);
+
+  useEffect(() => {
+    totalMessages.current = initialMessages.length;
+  }, [id]);
 
   useEffect(() => {
     if (messages.length > totalMessages.current) {
