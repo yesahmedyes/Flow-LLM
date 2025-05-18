@@ -2,14 +2,14 @@
 
 import { nanoid } from "nanoid";
 import ChatInterface from "./_components/chatInterface";
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useChatsStore } from "~/app/stores/chatsStore";
 import { api } from "~/trpc/react";
 import { toast } from "sonner";
 import CustomLoader from "~/app/_components/customLoader";
 
-export default function ChatPage() {
+function ChatPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const id = searchParams.get("id");
@@ -33,7 +33,6 @@ export default function ChatPage() {
       // If it's a specific ID that failed to load, go to new chat
       if (id) {
         router.replace("/chat");
-
         toast.error("Chat not found. Starting a new chat...");
       }
     },
@@ -51,5 +50,13 @@ export default function ChatPage() {
     <>{storedChat ? <ChatInterface id={id} initialMessages={storedChat.messages} /> : <CustomLoader />}</>
   ) : (
     <>{newId ? <ChatInterface id={newId} initialMessages={[]} /> : <CustomLoader />}</>
+  );
+}
+
+export default function ChatPage() {
+  return (
+    <Suspense fallback={<CustomLoader />}>
+      <ChatPageContent />
+    </Suspense>
   );
 }
