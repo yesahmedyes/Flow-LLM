@@ -9,6 +9,7 @@ import type { Message, UIMessage } from "ai";
 import { useUser } from "@clerk/nextjs";
 import { useModelsStore } from "~/app/stores/modelsStore";
 import { useAgentStore } from "~/app/stores/agentStore";
+import type { UploadedFile } from "../../../hooks/useFileUpload";
 
 interface ChatInterfaceProps {
   id: string;
@@ -32,8 +33,8 @@ export default function ChatInterface({ id, initialMessages }: ChatInterfaceProp
   });
 
   const handleSubmit = useCallback(
-    async (message: string) => {
-      if (message.length === 0) {
+    async (message: string, uploadedFiles?: UploadedFile[]) => {
+      if (message.length === 0 && (!uploadedFiles || uploadedFiles.length === 0)) {
         return;
       }
 
@@ -46,7 +47,7 @@ export default function ChatInterface({ id, initialMessages }: ChatInterfaceProp
         agent: agentSelected.current ? agent : undefined,
       };
 
-      await append({ role: "user", content: message }, { body });
+      await append({ role: "user", content: message }, { body, experimental_attachments: uploadedFiles });
     },
     [selectedModel, agentSelected, agent, append],
   );
@@ -80,6 +81,8 @@ export default function ChatInterface({ id, initialMessages }: ChatInterfaceProp
       totalMessages.current = messages.length;
     }
   }, [messages.length]);
+
+  console.log(messages);
 
   return (
     <div className="flex w-full mx-auto flex-col items-center h-full overflow-y-auto">

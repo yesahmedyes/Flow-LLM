@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import type { Model } from "~/lib/types/model";
+import { DEFAULT_MODEL, type Model } from "~/lib/types/model";
 
 interface ModelsStore {
   allModels: Model[];
@@ -14,12 +14,14 @@ interface ModelsStore {
 
 export const useModelsStore = create<ModelsStore>()((set) => ({
   allModels: [],
-  preferredModels: [],
+  preferredModels: [DEFAULT_MODEL],
   contentLoaded: false,
-  selectedModel: "openai/gpt-4.1-nano",
+  selectedModel: DEFAULT_MODEL.id,
   setAllModels: (models) => set({ allModels: models }),
   setPreferredModels: (models) => {
-    set({ preferredModels: models });
+    const newModels = Array.from(new Set([DEFAULT_MODEL, ...models]));
+
+    set({ preferredModels: newModels });
 
     localStorage.setItem("preferredModels", JSON.stringify(models));
   },

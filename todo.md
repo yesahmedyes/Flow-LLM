@@ -1,6 +1,5 @@
 # Improvements
 
-- [ ] Add ability to upload Image and File Attachments in chat
 - [ ] Make new chat load faster
 
 # Architecture Improvements

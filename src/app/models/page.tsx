@@ -18,7 +18,7 @@ export default function ModelsPage() {
 
   const [searchQuery, setSearchQuery] = useState("");
 
-  const [selectedModel, setSelectedModel] = useState<Model | null>(null);
+  const [openModel, setOpenModel] = useState<Model | null>(null);
 
   const [isOpen, setIsOpen] = useState(false);
 
@@ -84,7 +84,7 @@ export default function ModelsPage() {
               key={model.id}
               className="cursor-pointer relative"
               onClick={() => {
-                setSelectedModel(model);
+                setOpenModel(model);
                 setIsOpen(true);
               }}
             >
@@ -107,29 +107,29 @@ export default function ModelsPage() {
         </div>
       </div>
 
-      <Sheet open={isOpen && selectedModel !== null} onOpenChange={setIsOpen}>
+      <Sheet open={isOpen && openModel !== null} onOpenChange={setIsOpen}>
         <SheetContent side="right" className="sm:max-w-md overflow-y-auto pb-12">
-          {selectedModel && (
+          {openModel && (
             <>
               <SheetHeader>
-                <SheetTitle>{selectedModel.name}</SheetTitle>
-                <SheetDescription>{selectedModel.description}</SheetDescription>
+                <SheetTitle>{openModel.name}</SheetTitle>
+                <SheetDescription>{openModel.description}</SheetDescription>
               </SheetHeader>
 
               <div className="flex flex-col gap-4 px-6 pb-4">
                 <h4 className="text-sm font-medium">Architecture</h4>
                 <div className="grid grid-cols-2 gap-3 text-sm">
                   <div className="text-muted-foreground">Modality</div>
-                  <div>{selectedModel.architecture.modality}</div>
+                  <div>{openModel.architecture.modality}</div>
 
                   <div className="text-muted-foreground">Input</div>
-                  <div>{selectedModel.architecture.input_modalities.join(", ")}</div>
+                  <div>{openModel.architecture.input_modalities.join(", ")}</div>
 
                   <div className="text-muted-foreground">Output</div>
-                  <div>{selectedModel.architecture.output_modalities.join(", ")}</div>
+                  <div>{openModel.architecture.output_modalities.join(", ")}</div>
 
                   <div className="text-muted-foreground">Tokenizer</div>
-                  <div>{selectedModel.architecture.tokenizer}</div>
+                  <div>{openModel.architecture.tokenizer}</div>
                 </div>
               </div>
 
@@ -139,13 +139,13 @@ export default function ModelsPage() {
                 <h4 className="text-sm font-medium">Supported Features</h4>
                 <div className="grid grid-cols-2 gap-3 text-sm">
                   <div className="text-muted-foreground">Tool Usage</div>
-                  <div>{selectedModel.supported_parameters.includes("tools") ? "Yes" : "No"}</div>
+                  <div>{openModel.supported_parameters.includes("tools") ? "Yes" : "No"}</div>
 
                   <div className="text-muted-foreground">Reasoning</div>
-                  <div>{selectedModel.supported_parameters.includes("reasoning") ? "Yes" : "No"}</div>
+                  <div>{openModel.supported_parameters.includes("reasoning") ? "Yes" : "No"}</div>
 
                   <div className="text-muted-foreground">Web Search</div>
-                  <div>{selectedModel.supported_parameters.includes("web_search_options") ? "Yes" : "No"}</div>
+                  <div>{openModel.supported_parameters.includes("web_search_options") ? "Yes" : "No"}</div>
                 </div>
               </div>
 
@@ -155,32 +155,32 @@ export default function ModelsPage() {
                 <h4 className="text-sm font-medium">Pricing</h4>
                 <div className="grid grid-cols-2 gap-3 text-sm">
                   <div className="text-muted-foreground">Prompt</div>
-                  <div>${selectedModel.pricing.prompt}</div>
+                  <div>${openModel.pricing.prompt}</div>
 
                   <div className="text-muted-foreground">Completion</div>
-                  <div>${selectedModel.pricing.completion}</div>
+                  <div>${openModel.pricing.completion}</div>
 
                   <div className="text-muted-foreground">Request</div>
-                  <div>${selectedModel.pricing.request}</div>
+                  <div>${openModel.pricing.request}</div>
 
-                  {selectedModel.pricing.image && (
+                  {openModel.pricing.image && (
                     <>
                       <div className="text-muted-foreground">Image</div>
-                      <div>${selectedModel.pricing.image}</div>
+                      <div>${openModel.pricing.image}</div>
                     </>
                   )}
 
-                  {selectedModel.pricing.web_search && (
+                  {openModel.pricing.web_search && (
                     <>
                       <div className="text-muted-foreground">Web Search</div>
-                      <div>${selectedModel.pricing.web_search}</div>
+                      <div>${openModel.pricing.web_search}</div>
                     </>
                   )}
 
-                  {selectedModel.pricing.internal_reasoning && (
+                  {openModel.pricing.internal_reasoning && (
                     <>
                       <div className="text-muted-foreground">Internal Reasoning</div>
-                      <div>${selectedModel.pricing.internal_reasoning}</div>
+                      <div>${openModel.pricing.internal_reasoning}</div>
                     </>
                   )}
                 </div>

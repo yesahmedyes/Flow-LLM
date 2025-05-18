@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { UploadArea } from "./uploadArea";
+import { useUploadArea } from "../../../hooks/useUploadArea";
 import { api } from "~/trpc/react";
 import { DocumentUpload } from "iconsax-react";
 import { toast } from "sonner";
@@ -82,7 +82,7 @@ export default function UploadFileSection() {
     }
   }, []);
 
-  const { getRootProps, getInputProps, isDragActive } = UploadArea({ onDrop });
+  const { getRootProps, getInputProps, isDragActive } = useUploadArea({ onDrop });
 
   return (
     <div className="w-full mt-1.5 mb-10">
@@ -90,7 +90,7 @@ export default function UploadFileSection() {
       <div
         {...getRootProps()}
         className={`rounded-xl h-60 px-8 place-content-center w-full border border-dashed cursor-pointer bg-background ${
-          isDragActive ? "border-foreground/50" : "border-border"
+          isDragActive ? "border-blue-500" : "border-border"
         }`}
       >
         <input {...getInputProps()} />

@@ -1,6 +1,11 @@
 import { useState, useRef } from "react";
 
-export const UploadArea = ({ onDrop }: { onDrop: (files: File[]) => Promise<void> }) => {
+interface UploadAreaProps {
+  onDrop: (files: File[]) => Promise<void>;
+  onClick?: boolean;
+}
+
+export const useUploadArea = ({ onDrop, onClick = true }: UploadAreaProps) => {
   const inputRef = useRef<HTMLInputElement>(null);
 
   const [isDragActive, setIsDragActive] = useState(false);
@@ -16,7 +21,9 @@ export const UploadArea = ({ onDrop }: { onDrop: (files: File[]) => Promise<void
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
+
     setIsDragActive(false);
+
     if (e.dataTransfer.files.length > 0) {
       void onDrop(Array.from(e.dataTransfer.files));
     }
@@ -34,7 +41,7 @@ export const UploadArea = ({ onDrop }: { onDrop: (files: File[]) => Promise<void
 
   return {
     getRootProps: () => ({
-      onClick: handleClick,
+      onClick: onClick ? handleClick : undefined,
       onDragOver: handleDragOver,
       onDragLeave: handleDragLeave,
       onDrop: handleDrop,
