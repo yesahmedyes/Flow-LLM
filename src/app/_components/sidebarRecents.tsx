@@ -3,7 +3,7 @@ import { Pencil, Loader2 } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { Trash } from "iconsax-react";
 import { useChatsStore } from "../stores/chatsStore";
-import { useParams, useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { api } from "~/trpc/react";
 import { toast } from "sonner";
 import { Input } from "./ui/input";
@@ -17,12 +17,14 @@ export default function SidebarRecents() {
 
   const utils = api.useUtils();
 
-  const { id } = useParams();
+  const searchParams = useSearchParams();
+  const id = searchParams.get("id");
+
   const router = useRouter();
 
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } = api.chat.getChats.useInfiniteQuery(
     {
-      limit: 10,
+      limit: 20,
     },
     {
       getNextPageParam: (lastPage) => lastPage.nextCursor,
@@ -111,7 +113,7 @@ export default function SidebarRecents() {
       return;
     }
 
-    router.push(`/chat/${chatId}`);
+    router.push(`/chat?id=${chatId}`);
   };
 
   const [editChatId, setEditChatId] = useState<string | null>(null);
@@ -136,7 +138,7 @@ export default function SidebarRecents() {
   };
 
   return (
-    <SidebarMenu className="gap-1 max-h-[60vh] overflow-y-auto px-2">
+    <SidebarMenu className="gap-1 overflow-y-auto px-2">
       {chats
         .sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime())
         .map((chat) => {

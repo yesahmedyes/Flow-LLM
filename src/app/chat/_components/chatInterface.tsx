@@ -82,8 +82,6 @@ export default function ChatInterface({ id, initialMessages }: ChatInterfaceProp
     }
   }, [messages.length]);
 
-  console.log(messages);
-
   return (
     <div className="flex w-full mx-auto flex-col items-center h-full overflow-y-auto">
       <FullChat

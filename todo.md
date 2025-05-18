@@ -1,7 +1,3 @@
-# Improvements
-
-- [ ] Make new chat load faster
-
 # Architecture Improvements
 
 - [ ] Make the AWS files private and only accessible using a temporary presigned URL

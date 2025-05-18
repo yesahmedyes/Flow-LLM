@@ -46,7 +46,7 @@ function CustomSidebar({ userId }: { userId: string }) {
       updatedAt: new Date(),
     });
 
-    router.push(`/chat/${newChatId}`);
+    router.push(`/chat?id=${newChatId}`);
   };
 
   const { isMobile, setOpen, setOpenMobile } = useSidebar();
@@ -86,13 +86,13 @@ function CustomSidebar({ userId }: { userId: string }) {
             </div>
           </Button>
         </SidebarHeader>
+        <SidebarGroupLabel className="pb-2 px-5 mx-0.5">Recents</SidebarGroupLabel>
         <SidebarContent>
           <SidebarGroup>
-            <SidebarGroupLabel className="pb-2 px-5 mx-0.5">Recents</SidebarGroupLabel>
             <SidebarRecents />
           </SidebarGroup>
         </SidebarContent>
-        <SidebarFooter className="pt-1 pb-6">
+        <SidebarFooter className="pt-5 pb-6">
           <div className="flex flex-col gap-1 pb-1">
             <Link href="/files">
               <Button
