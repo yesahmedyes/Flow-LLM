@@ -317,7 +317,7 @@ const retrieveMemory = async (messages: UIMessage[], userId: string) => {
 
   const searchResult = await zep.graph.search({
     userId,
-    query: result.text,
+    query: result.text.length > 256 ? result.text.slice(0, 256) : result.text,
     mmrLambda: 0.7,
     limit: 20,
     reranker: "mmr",

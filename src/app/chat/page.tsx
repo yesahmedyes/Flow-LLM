@@ -44,7 +44,7 @@ function ChatPageContent() {
     }
   }, [id, storedChat]);
 
-  const [newId] = useState(!id ? nanoid() : null);
+  const [newId] = useState(nanoid());
 
   return id ? (
     <>{storedChat ? <ChatInterface id={id} initialMessages={storedChat.messages} /> : <CustomLoader />}</>

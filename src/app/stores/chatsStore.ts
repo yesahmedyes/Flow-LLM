@@ -55,7 +55,7 @@ export const useChatsStore = create<ChatsStore>((set) => ({
           id: chatId,
           messages,
           userId,
-          name: messages[0]?.content ?? "New Chat",
+          name: messages[0]?.content && messages[0]?.content.length > 0 ? messages[0]?.content : "New Chat",
           createdAt: new Date(),
           updatedAt: new Date(),
         };

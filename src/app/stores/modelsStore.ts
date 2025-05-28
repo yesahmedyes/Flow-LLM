@@ -19,7 +19,8 @@ export const useModelsStore = create<ModelsStore>()((set) => ({
   selectedModel: DEFAULT_MODEL.id,
   setAllModels: (models) => set({ allModels: models }),
   setPreferredModels: (models) => {
-    const newModels = Array.from(new Set([DEFAULT_MODEL, ...models]));
+    const modelsWithDefault = [DEFAULT_MODEL, ...models];
+    const newModels = Array.from(new Map(modelsWithDefault.map((model) => [model.id, model])).values());
 
     set({ preferredModels: newModels });
 
