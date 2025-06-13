@@ -107,25 +107,3 @@ A modern AI chat application built with Next.js, featuring multiple LLM models, 
    ```
 
 6. Open [http://localhost:3000](http://localhost:3000) in your browser
-
-## Development Commands
-
-- `pnpm dev` - Start the development server with Turbo
-- `pnpm build` - Build the application for production
-- `pnpm start` - Start the production server
-- `pnpm lint` - Run ESLint
-- `pnpm format:write` - Format code with Prettier
-- `pnpm db:generate` - Generate database migrations
-- `pnpm db:migrate` - Run database migrations
-- `pnpm db:studio` - Open Drizzle Studio to manage your database
-- `pnpm typecheck` - Run TypeScript type checking
-
-## Project Structure
-
-- `/src/app` - Next.js App Router pages and components
-- `/src/server` - Server-side logic and API endpoints
-- `/src/server/db` - Database schema and connections
-- `/src/lib` - Utilities and shared types
-- `/src/hooks` - Custom React hooks
-- `/src/trpc` - tRPC API router setup
-- `/migrations` - Database migration files
